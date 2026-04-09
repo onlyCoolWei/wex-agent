@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "name": "代码修改日志",
+  "description": "每次代码文件被编辑保存后，自动将修改内容总结追加到 docs/diary.md 中，记录日期和修改摘要。",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.js",
+      "*.ts",
+      "*.js",
+      "*.json"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "一个代码文件刚刚被编辑保存。请读取 docs/diary.md 的当前内容，然后将本次修改的文件名和修改内容的简要中文总结追加到 docs/diary.md 中。格式要求：如果今天的日期标题（### YYYY-MM-DD）已存在，就在该日期下追加条目；如果不存在，新增日期标题后再追加。每条记录格式为 \"- 修改了 `文件名`：简要描述修改内容\"。保持简洁。"
+  }
+}
