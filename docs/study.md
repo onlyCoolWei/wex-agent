@@ -14,14 +14,14 @@
 
 ## 核心结论
 
-| 优先级 | 项目 | 最值得研究的方向 |
-| --- | --- | --- |
-| 1 | OpenHands | 完整 Software Engineering Agent 架构、生命周期、Sandbox、Eval |
-| 2 | DeepSeek Harness | 插件化 Coding Agent Runtime、事件模型、Session Log、能力替换 |
-| 3 | Pi | 精简的 Coding Agent Runtime、Context、Session、Compaction |
-| 4 | OpenCode | 完整开源 Coding Agent 产品、TypeScript 工程实现 |
-| 5 | Aider | Codebase Map、Git、Lint/Test、错误修复等工程细节 |
-| 6 | SWE-agent / mini-SWE-agent | Agent Loop、SWE-bench 与任务级 Evaluation |
+| 优先级 | 项目                       | 最值得研究的方向                                              |
+| ------ | -------------------------- | ------------------------------------------------------------- |
+| 1      | OpenHands                  | 完整 Software Engineering Agent 架构、生命周期、Sandbox、Eval |
+| 2      | DeepSeek Harness           | 插件化 Coding Agent Runtime、事件模型、Session Log、能力替换  |
+| 3      | Pi                         | 精简的 Coding Agent Runtime、Context、Session、Compaction     |
+| 4      | OpenCode                   | 完整开源 Coding Agent 产品、TypeScript 工程实现               |
+| 5      | Aider                      | Codebase Map、Git、Lint/Test、错误修复等工程细节              |
+| 6      | SWE-agent / mini-SWE-agent | Agent Loop、SWE-bench 与任务级 Evaluation                     |
 
 如果按源码学习价值排序，建议优先阅读：
 
@@ -228,30 +228,30 @@ Coding Agent 的评测则需要覆盖完整任务链路：
 
 ## 能力映射
 
-| 目标能力 | 推荐研究项目 |
-| --- | --- |
-| Agent Loop | Pi / DeepSeek Harness / OpenHands / OpenCode |
-| Context Engineering | Pi / DeepSeek Harness / OpenCode |
-| Context Compaction | Pi / OpenCode / OpenHands |
-| Memory | OpenHands / Pi |
-| System Prompt | DeepSeek Harness / OpenCode / OpenHands / Pi |
-| Session | DeepSeek Harness / Pi / OpenCode |
-| Event Model | DeepSeek Harness / Pi |
-| Plugin Architecture | DeepSeek Harness / Pi |
-| Retry | OpenHands / DeepSeek Harness / OpenCode |
-| Interrupt | DeepSeek Harness / OpenHands / Pi |
-| Resume | DeepSeek Harness / OpenHands / Pi |
-| Human Approval | DeepSeek Harness / OpenHands / OpenCode |
-| Sandbox | OpenHands / DeepSeek Harness |
-| Workspace | OpenHands / DeepSeek Harness |
-| Codebase Context | Aider |
-| Git | Aider |
-| Error -> Repair | Aider / OpenHands |
-| Evaluation | SWE-agent / OpenHands |
-| Multi-Agent | OpenHands / DeepSeek Harness |
-| Tool Abstraction | DeepSeek Harness / Pi / OpenHands |
-| Observability | OpenHands / DeepSeek Harness / OpenCode |
-| TypeScript 工程实现 | DeepSeek Harness / Pi / OpenCode |
+| 目标能力            | 推荐研究项目                                 |
+| ------------------- | -------------------------------------------- |
+| Agent Loop          | Pi / DeepSeek Harness / OpenHands / OpenCode |
+| Context Engineering | Pi / DeepSeek Harness / OpenCode             |
+| Context Compaction  | Pi / OpenCode / OpenHands                    |
+| Memory              | OpenHands / Pi                               |
+| System Prompt       | DeepSeek Harness / OpenCode / OpenHands / Pi |
+| Session             | DeepSeek Harness / Pi / OpenCode             |
+| Event Model         | DeepSeek Harness / Pi                        |
+| Plugin Architecture | DeepSeek Harness / Pi                        |
+| Retry               | OpenHands / DeepSeek Harness / OpenCode      |
+| Interrupt           | DeepSeek Harness / OpenHands / Pi            |
+| Resume              | DeepSeek Harness / OpenHands / Pi            |
+| Human Approval      | DeepSeek Harness / OpenHands / OpenCode      |
+| Sandbox             | OpenHands / DeepSeek Harness                 |
+| Workspace           | OpenHands / DeepSeek Harness                 |
+| Codebase Context    | Aider                                        |
+| Git                 | Aider                                        |
+| Error -> Repair     | Aider / OpenHands                            |
+| Evaluation          | SWE-agent / OpenHands                        |
+| Multi-Agent         | OpenHands / DeepSeek Harness                 |
+| Tool Abstraction    | DeepSeek Harness / Pi / OpenHands            |
+| Observability       | OpenHands / DeepSeek Harness / OpenCode      |
+| TypeScript 工程实现 | DeepSeek Harness / Pi / OpenCode             |
 
 ## 目标架构：Coding Agent Runtime
 
@@ -355,10 +355,10 @@ Session -> Compaction -> New Context
 
 ### 三者的关系
 
-| 概念 | 解决的问题 | 生命周期 |
-| --- | --- | --- |
-| Context | 当前模型需要看到什么？ | 单轮或短周期 |
-| Memory | 哪些知识需要跨任务保留？ | 长期 |
+| 概念    | 解决的问题                             | 生命周期       |
+| ------- | -------------------------------------- | -------------- |
+| Context | 当前模型需要看到什么？                 | 单轮或短周期   |
+| Memory  | 哪些知识需要跨任务保留？               | 长期           |
 | Session | 本次执行发生了什么、当前处于什么状态？ | 单次任务全过程 |
 
 这三个概念应在数据模型和生命周期上明确分离，否则后续的压缩、恢复、审计和调试都会变得困难。

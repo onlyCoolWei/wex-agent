@@ -13,9 +13,7 @@ export interface SupabaseHealth {
   error?: string;
 }
 
-export function getSupabaseConfigFromEnv(
-  env: Record<string, string | undefined>,
-): SupabaseConfig {
+export function getSupabaseConfigFromEnv(env: Record<string, string | undefined>): SupabaseConfig {
   const url = env.SUPABASE_URL?.trim();
   const key = (env.SUPABASE_SECRET_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY)?.trim();
 
@@ -42,9 +40,7 @@ export function getSupabaseConfigFromEnv(
   return { url, key };
 }
 
-export function createSupabaseServerClient(
-  config: SupabaseConfig,
-): SupabaseServerClient {
+export function createSupabaseServerClient(config: SupabaseConfig): SupabaseServerClient {
   return createClient(config.url, config.key, {
     auth: {
       autoRefreshToken: false,

@@ -6,19 +6,19 @@
 
 ## 技术栈总览
 
-| 层级 | 推荐技术 | 主要职责 |
-| --- | --- | --- |
-| Web | React、Vite、TypeScript | Chat、项目管理、文件树、运行状态、Preview |
-| UI | Tailwind CSS、shadcn/ui | 组件体系与交互界面 |
-| API Server | NestJS | API、认证、业务编排、权限、事件订阅 |
-| Agent Runtime | `@openai/agents` + 自研封装 | Agent Loop、Tool、Context、Runner |
-| Background Worker | NestJS Worker，后续可接 BullMQ | 执行长时间 Agent Run 与恢复任务 |
-| Model Gateway | LiteLLM | 模型路由、兼容层、用量与策略控制 |
-| Database | Supabase PostgreSQL | 项目、会话、运行状态、事件与审计数据 |
-| ORM | Drizzle ORM | Schema、Migration 与类型安全的数据访问 |
-| Sandbox | Docker，预留 Daytona / E2B | 隔离 Workspace、Shell、Build、Preview |
-| 实时通信 | REST + SSE | 命令提交、状态查询与单向事件流 |
-| Monorepo | pnpm workspace + Turborepo（可选） | 应用与共享 Package 管理 |
+| 层级              | 推荐技术                           | 主要职责                                  |
+| ----------------- | ---------------------------------- | ----------------------------------------- |
+| Web               | React、Vite、TypeScript            | Chat、项目管理、文件树、运行状态、Preview |
+| UI                | Tailwind CSS、shadcn/ui            | 组件体系与交互界面                        |
+| API Server        | NestJS                             | API、认证、业务编排、权限、事件订阅       |
+| Agent Runtime     | `@openai/agents` + 自研封装        | Agent Loop、Tool、Context、Runner         |
+| Background Worker | NestJS Worker，后续可接 BullMQ     | 执行长时间 Agent Run 与恢复任务           |
+| Model Gateway     | LiteLLM                            | 模型路由、兼容层、用量与策略控制          |
+| Database          | Supabase PostgreSQL                | 项目、会话、运行状态、事件与审计数据      |
+| ORM               | Drizzle ORM                        | Schema、Migration 与类型安全的数据访问    |
+| Sandbox           | Docker，预留 Daytona / E2B         | 隔离 Workspace、Shell、Build、Preview     |
+| 实时通信          | REST + SSE                         | 命令提交、状态查询与单向事件流            |
+| Monorepo          | pnpm workspace + Turborepo（可选） | 应用与共享 Package 管理                   |
 
 ## 架构原则
 

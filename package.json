@@ -13,6 +13,8 @@
     "deps": "turbo ls",
     "graph": "turbo run build --graph=.turbo/build-graph.html",
     "plan": "turbo run build --dry-run=text",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean",
     "prepare": "husky"
@@ -22,7 +24,12 @@
     "@commitlint/config-conventional": "^20.5.0",
     "@types/node": "^22.15.0",
     "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.9.6",
     "turbo": "^2.5.0",
     "typescript": "^5.8.0"
+  },
+  "lint-staged": {
+    "*.{cjs,css,html,js,json,jsonc,jsx,md,mjs,scss,ts,tsx,yaml,yml}": "prettier --write"
   }
 }

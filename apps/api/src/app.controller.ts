@@ -1,17 +1,6 @@
-import {
-  Controller,
-  Get,
-  Inject,
-  ServiceUnavailableException,
-} from "@nestjs/common";
-import {
-  checkSupabaseConnection,
-  type SupabaseServerClient,
-} from "@wex/database";
-import type {
-  ArchitectureResponse,
-  HealthResponse,
-} from "@wex/contracts";
+import { Controller, Get, Inject, ServiceUnavailableException } from "@nestjs/common";
+import { checkSupabaseConnection, type SupabaseServerClient } from "@wex/database";
+import type { ArchitectureResponse, HealthResponse } from "@wex/contracts";
 import { SUPABASE_CLIENT } from "./database/database.constants.js";
 
 @Controller()
