@@ -1,3 +1,9 @@
+### 2026-08-15
+
+- ✨ 新增 Codex Stop hook，在任务完成后按日期和变更类型自动更新开发日记
+- ✨ 接入 Supabase 服务端客户端、NestJS 数据库模块、健康检查接口与 migration，并补充连接指南
+- 🔧 新增 `deps`、`graph`、`plan` 短命令，简化 Monorepo 依赖和任务图查看
+
 ### 2026-04-09
 
 - 🥳 wex-agent初始化

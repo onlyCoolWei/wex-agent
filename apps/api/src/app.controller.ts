@@ -1,16 +1,58 @@
-import { Controller, Get } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Inject,
+  ServiceUnavailableException,
+} from "@nestjs/common";
+import {
+  checkSupabaseConnection,
+  type SupabaseServerClient,
+} from "@wex/database";
 import type {
   ArchitectureResponse,
   HealthResponse,
 } from "@wex/contracts";
+import { SUPABASE_CLIENT } from "./database/database.constants.js";
 
 @Controller()
 export class AppController {
+  constructor(
+    @Inject(SUPABASE_CLIENT)
+    private readonly supabase: SupabaseServerClient,
+  ) {}
+
   @Get("health")
   getHealth(): HealthResponse {
     return {
       service: "api",
       status: "ok",
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get("health/database")
+  async getDatabaseHealth(): Promise<{
+    service: "supabase";
+    status: "ok";
+    latencyMs: number;
+    timestamp: string;
+  }> {
+    const health = await checkSupabaseConnection(this.supabase);
+
+    if (!health.connected) {
+      throw new ServiceUnavailableException({
+        service: "supabase",
+        status: "error",
+        latencyMs: health.latencyMs,
+        error: health.error,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    return {
+      service: "supabase",
+      status: "ok",
+      latencyMs: health.latencyMs,
       timestamp: new Date().toISOString(),
     };
   }
@@ -37,10 +79,10 @@ export class AppController {
           status: "ready",
         },
         {
-          id: "postgres",
-          label: "PostgreSQL",
+          id: "supabase",
+          label: "Supabase",
           kind: "infrastructure",
-          status: "planned",
+          status: "ready",
         },
         {
           id: "queue",

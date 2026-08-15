@@ -10,6 +10,9 @@
     "dev:web": "pnpm --filter @wex/web dev",
     "dev:api": "pnpm --filter @wex/api dev",
     "dev:worker": "pnpm --filter @wex/worker dev",
+    "deps": "turbo ls",
+    "graph": "turbo run build --graph=.turbo/build-graph.html",
+    "plan": "turbo run build --dry-run=text",
     "typecheck": "turbo run typecheck",
     "clean": "turbo run clean",
     "prepare": "husky"

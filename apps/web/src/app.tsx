@@ -27,7 +27,12 @@ const fallbackArchitecture: ArchitectureResponse = {
       status: "planned",
     },
     { id: "sandbox", label: "Sandbox", kind: "package", status: "ready" },
-    { id: "postgres", label: "PostgreSQL", kind: "infrastructure", status: "planned" },
+    {
+      id: "supabase",
+      label: "Supabase",
+      kind: "infrastructure",
+      status: "ready",
+    },
     { id: "queue", label: "BullMQ + Redis", kind: "infrastructure", status: "planned" },
   ],
 };
@@ -38,7 +43,7 @@ const nodeIcons = {
   worker: Workflow,
   runtime: TerminalSquare,
   sandbox: Box,
-  postgres: Database,
+  supabase: Database,
   queue: Layers3,
 };
 
