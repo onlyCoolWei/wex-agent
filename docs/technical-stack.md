@@ -108,6 +108,8 @@ NestJS 的模块、依赖注入、Guard、Interceptor 和生命周期机制适�
 @openai/agents
 ```
 
+OpenAI Agents SDK 与 LiteLLM 的具体接入边界、配置和实施阶段见 [OpenAI Agents SDK 与 LiteLLM 接入技术方案](openai-agents-litellm.md)。
+
 并在其上封装稳定的业务接口：
 
 ```text

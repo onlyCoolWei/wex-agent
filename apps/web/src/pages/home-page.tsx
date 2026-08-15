@@ -21,7 +21,7 @@ export function HomePage({ navigate }: { navigate: Navigate }) {
             <Sparkles size={14} /> AI 网站创作空间
           </p>
           <h1 className="font-display text-5xl leading-[1.07] font-normal sm:text-[64px] lg:text-[78px]">
-            用对话，构建你的站点。
+            用对话构建你的站点
           </h1>
           <p className="mt-6 max-w-[500px] text-[15px] leading-[1.8] text-[#666d65]">
             从一个想法开始，和 Wex 一起把它变成可预览、可迭代的网站。
