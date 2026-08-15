@@ -61,6 +61,11 @@
   }
 }
 
+.project-delete-dialog::backdrop {
+  background: rgb(24 28 24 / 42%);
+  backdrop-filter: blur(2px);
+}
+
 @keyframes pulse-dot {
   0%,
   80%,

@@ -12,6 +12,8 @@ const buttonVariants = cva(
           "h-[42px] rounded-[4px] bg-ink px-[17px] text-[13px] font-semibold text-white shadow-[0_5px_12px_rgba(25,30,25,0.13)] hover:-translate-y-px hover:bg-[#343933] disabled:opacity-60",
         outline:
           "h-[42px] rounded-[4px] border border-[#cfd3cc] bg-white px-[17px] text-[13px] font-semibold hover:-translate-y-px hover:bg-[#f4f6f1] disabled:opacity-60",
+        destructive:
+          "h-[42px] rounded-[4px] bg-danger px-[17px] text-[13px] font-semibold text-white shadow-[0_5px_12px_rgba(125,45,40,0.16)] hover:-translate-y-px hover:bg-[#ae463e] disabled:opacity-60",
         ghost: "size-8 rounded-[4px] hover:bg-[#ecefe9]",
         send: "size-[30px] rounded-[4px] bg-ink text-white hover:bg-[#343933] disabled:bg-[#eceeea] disabled:text-[#aeb3ac]",
       },

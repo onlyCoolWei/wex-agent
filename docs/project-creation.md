@@ -1,59 +1,49 @@
-# 创建 Project 技术方案
+# Project 创建、展示与删除技术方案
 
 ## 1. 目标与范围
 
-在工作台点击“创建项目”或“创建第一个项目”时，由 Web 调用 NestJS API，API 再通过服务端 Supabase Client 向 `public.projects` 表插入一条项目记录。创建成功后，Web 使用数据库返回的项目 ID 跳转到 `/projects/:projectId`。
+工作台通过 NestJS API 管理 Supabase 中的 Project：进入页面时加载并展示已有项目；点击“创建项目”时插入记录并使用数据库返回的 ID 跳转到 `/projects/:projectId`；点击项目删除按钮时，必须经过二次确认弹窗，再由 API 永久删除对应记录。
 
 这里的“创建一个 project 的表”应拆成两件事：
 
 1. 使用 Supabase migration **一次性创建** `projects` 表。
 2. 用户每次点击按钮时，在 `projects` 表中**新增一条记录**，而不是动态创建新表。
 
-本功能只覆盖 Project 数据模型和创建链路。项目列表、项目详情加载、重命名、删除、用户登录和 Agent Workspace 初始化不属于本次最小实现，但数据模型和接口边界需要为它们保留扩展空间。
+本功能覆盖 Project 数据模型、创建、列表展示和删除链路。项目详情加载、重命名、归档、用户登录和 Agent Workspace 初始化不属于本次实现，但数据模型和接口边界需要为它们保留扩展空间。
 
 ## 2. 当前能力评估
 
-结论：项目已经具备接入 Supabase 的基础设施，但**尚不具备创建 Project 的业务能力**。
+结论：项目已具备 Project 创建、列表和删除的基础业务闭环；鉴权与详情数据加载仍待后续补齐。
 
-| 层级            | 当前状态                                            | 判断                 |
-| --------------- | --------------------------------------------------- | -------------------- |
-| Web 创建入口    | `workspace-page.tsx` 中两个按钮共用 `createProject` | 已有 UI              |
-| Web 创建行为    | 等待 650ms，在浏览器生成 UUID 后直接跳转            | 仅为演示，不会持久化 |
-| Web API Client  | 没有统一请求封装，也没有 Project 请求               | 缺失                 |
-| API Server      | NestJS 已启用 `/api` 前缀与 CORS                    | 基础可用             |
-| Project API     | 当前 Controller 只有 health 和 architecture         | 缺失                 |
-| Supabase Client | `@wex/database` 已创建仅服务端使用的 Client         | 已具备               |
-| 环境配置        | 已支持 `SUPABASE_URL`、`SUPABASE_SECRET_KEY`        | 已具备               |
-| 数据库连通性    | 已有 `health_check()` migration 和健康检查          | 已具备               |
-| Project Schema  | `supabase/migrations` 中没有 `projects` 表          | 缺失                 |
-| 共享契约        | `@wex/contracts` 已存在，但没有 Project 类型        | 缺失                 |
-| 鉴权与租户隔离  | 没有 AuthModule、Guard 或当前用户上下文             | 缺失                 |
-| 自动化测试      | Web/API 当前未配置测试脚本                          | 缺失                 |
+| 层级            | 当前状态                                     | 判断     |
+| --------------- | -------------------------------------------- | -------- |
+| Web 创建入口    | 两个按钮共用真实异步创建逻辑                 | 已实现   |
+| Web 项目展示    | 加载、错误、空状态和项目网格                 | 已实现   |
+| Web 删除交互    | 原生模态 dialog 二次确认、删除中和失败状态   | 已实现   |
+| Web API Client  | 集中封装创建、列表和删除请求                 | 已实现   |
+| API Server      | NestJS 已启用 `/api` 前缀与 CORS             | 基础可用 |
+| Project API     | `POST/GET/DELETE /api/projects`              | 已实现   |
+| Supabase Client | `@wex/database` 已创建仅服务端使用的 Client  | 已具备   |
+| 环境配置        | 已支持 `SUPABASE_URL`、`SUPABASE_SECRET_KEY` | 已具备   |
+| 数据库连通性    | 已有 `health_check()` migration 和健康检查   | 已具备   |
+| Project Schema  | migration 定义 projects 表、索引、约束和 RLS | 已实现   |
+| 共享契约        | `@wex/contracts` 提供 Project 请求与响应类型 | 已实现   |
+| 鉴权与租户隔离  | 没有 AuthModule、Guard 或当前用户上下文      | 缺失     |
+| 自动化测试      | Web/API 当前未配置测试脚本                   | 缺失     |
 
-当前创建逻辑位于 `apps/web/src/pages/workspace-page.tsx:9-13`：
-
-```ts
-const createProject = () => {
-  if (!creating) {
-    setCreating(true);
-    window.setTimeout(() => navigate(`/projects/${crypto.randomUUID()}`), 650);
-  }
-};
-```
-
-这段逻辑存在三个业务问题：刷新或返回工作台后无法找到该项目；URL 中的 ID 不对应任何数据库记录；创建失败没有错误状态。
+工作台不缓存 Project 事实数据。每次进入页面都通过 `GET /api/projects` 获取数据库快照，创建使用服务端 ID，删除则在服务端确认成功后更新当前列表。
 
 ## 3. 目标架构
 
 ```text
 WorkspacePage
-  -> POST /api/projects
+  -> GET | POST | DELETE /api/projects
   -> ProjectsController
   -> ProjectsService
   -> Supabase server client
   -> public.projects
-  <- 201 Project
-  -> /projects/{project.id}
+  <- 200 Project[] | 201 Project | 204
+  -> 展示列表 | /projects/{project.id} | 移除列表项
 ```
 
 浏览器不应直接持有 `SUPABASE_SECRET_KEY`。当前仓库已经选择由 API/Worker 使用高权限 Supabase Client，因此第一版继续采用 `Web -> API -> Supabase`，不要在 `apps/web` 中安装或初始化高权限 Supabase Client。
@@ -171,6 +161,48 @@ export interface ProjectResponse {
 
 第一版暂不要求幂等键，但前端必须在请求期间禁用两个创建按钮。若未来存在网络自动重试或移动端弱网场景，应增加 `client_request_id` 唯一列或 `Idempotency-Key`，避免一次操作产生两个项目。
 
+### 5.2 获取项目列表
+
+```http
+GET /api/projects
+```
+
+成功返回 `200 OK`，响应为按 `created_at desc` 排序的 `ProjectResponse[]`：
+
+```json
+[
+  {
+    "id": "6ca6e06d-4998-4c3f-b59f-c551d8121db6",
+    "name": "未命名项目",
+    "status": "active",
+    "createdAt": "2026-08-15T10:00:00.000Z",
+    "updatedAt": "2026-08-15T10:00:00.000Z"
+  }
+]
+```
+
+边界规则：
+
+- 没有项目时返回空数组和 `200`，不能用 `404` 表示空列表。
+- Supabase 查询失败时记录内部详情，对外返回稳定的 `500`。
+- 当前单用户 MVP 返回全部项目；接入 Auth 后必须按已认证的 `owner_id` 过滤。
+
+### 5.3 删除项目
+
+```http
+DELETE /api/projects/:projectId
+```
+
+成功返回 `204 No Content`，不返回 JSON body。
+
+边界规则：
+
+- `projectId` 必须是 UUID，格式错误返回 `400`。
+- 目标项目不存在时返回 `404`，不能把未删除任何记录当作成功。
+- Supabase 删除失败时返回稳定的 `500`，且不得泄漏内部 schema 或凭据。
+- 当前实现为永久硬删除；未来若产品需要回收站，应改用归档或 `deleted_at` 软删除模型。
+- 删除属于破坏性操作，Web 必须在真正发送 DELETE 请求前显示二次确认弹窗。
+
 ## 6. Web 交互设计
 
 将当前定时器替换为真实异步请求：
@@ -201,6 +233,27 @@ creating（两个按钮同时 disabled）
   -> 失败：回到 idle，并显示可重试错误
 ```
 
+列表加载状态流：
+
+```text
+loading
+  -> 成功且有数据：展示项目网格
+  -> 成功且为空：展示“创建第一个项目”空状态
+  -> 失败：展示可见错误和重新加载按钮
+```
+
+删除状态流：
+
+```text
+idle
+  -> 点击项目删除图标
+confirming（二次确认 dialog）
+  -> 取消：关闭弹窗，不发送请求
+  -> 确认：deleting（禁用关闭、取消和重复确认）
+     -> 成功：关闭弹窗并移除对应列表项
+     -> 失败：保留弹窗并显示可重试错误
+```
+
 实现要求：
 
 - `creating` 在请求开始前设为 `true`，在失败路径恢复为 `false`。
@@ -210,6 +263,10 @@ creating（两个按钮同时 disabled）
 - 错误提示应通过页面可见且带 `role="alert"` 的区域呈现，不能只写入 console。
 - 两个入口共用同一个 handler 和同一份状态，避免重复请求。
 - API 基础地址建议集中在 `apps/web/src/lib/api.ts`。开发环境可继续使用 Vite 的 `/api` proxy；部署到不同域名时再读取 `VITE_API_URL` 并统一拼接。
+- 项目项点击后进入 `/projects/:projectId`，删除图标必须是独立按钮，不能因为事件冒泡误打开项目。
+- 删除确认使用真正的模态 `dialog`，支持 Escape 和遮罩取消，并在删除期间阻止关闭。
+- 项目列表的加载失败不能退化为空状态，否则用户会误以为项目已丢失。
+- 列表和单项响应都必须做运行时结构校验，不能只依赖 TypeScript 类型断言。
 
 ## 7. 实施顺序与文件清单
 
@@ -225,7 +282,8 @@ creating（两个按钮同时 disabled）
 1. 在 `@wex/contracts` 增加请求/响应类型。
 2. 新建 `apps/api/src/projects/` 模块、Controller 和 Service。
 3. 在 `AppModule` 注册 `ProjectsModule`。
-4. 实现输入校验、Supabase insert、字段映射和异常处理。
+4. 实现输入校验、Supabase insert/select/delete、字段映射和异常处理。
+5. 列表按创建时间倒序；删除必须区分无效 ID、记录不存在和数据库失败。
 
 NestJS 当前没有安装 `class-validator`/`class-transformer`，也没有全局 `ValidationPipe`。第一版可以在 Service 中做小范围显式校验；如果紧接着会增加更多写接口，则应统一引入 DTO validation 和全局 pipe，避免各接口重复手写。
 
@@ -235,6 +293,9 @@ NestJS 当前没有安装 `class-validator`/`class-transformer`，也没有全�
 2. 替换 `workspace-page.tsx` 中的定时器和浏览器 UUID。
 3. 增加失败提示与重试状态。
 4. 创建成功后用服务端 ID 跳转。
+5. 工作台进入时加载项目，并实现 loading、error、empty 和 populated 四种视图。
+6. 项目项支持进入项目页，并提供独立删除按钮与二次确认弹窗。
+7. 删除成功后更新本地列表；删除失败时保留弹窗以便重试。
 
 ### 阶段 D：验证
 
@@ -243,6 +304,9 @@ NestJS 当前没有安装 `class-validator`/`class-transformer`，也没有全�
 3. 使用 `curl` 调用两次 `POST /api/projects`，确认生成两个不同 ID 和两条记录。
 4. 从工作台点击创建，确认 loading、单次插入和正确跳转。
 5. 临时断开 API 或使用错误配置，确认页面显示失败提示、按钮恢复可点击、没有跳转。
+6. 请求 `GET /api/projects`，确认顺序、空数组语义和字段映射正确。
+7. 对无效 UUID 和不存在的 UUID 调用 DELETE，分别确认返回 `400` 和 `404`。
+8. 在工作台取消删除，确认没有请求；确认删除后，确认数据库记录和列表项同时消失。
 
 ## 8. 验收标准
 
@@ -253,17 +317,20 @@ NestJS 当前没有安装 `class-validator`/`class-transformer`，也没有全�
 - `SUPABASE_SECRET_KEY` 不出现在 Web bundle、浏览器请求或前端环境变量中。
 - `projects` 表启用 RLS，且没有对浏览器匿名角色开放直接写权限。
 - API 返回对象符合 `@wex/contracts` 中的共享类型。
+- 工作台只在列表请求成功且结果为空时展示空状态；有项目时按创建时间倒序展示。
+- 项目项可以进入与其 ID 对应的项目页，删除按钮不会触发项目跳转。
+- 删除操作必须二次确认；取消不发送请求，确认期间不能重复提交或关闭弹窗。
+- 删除成功后记录与列表项消失；失败时保留项目并显示可重试错误。
 - typecheck 和 build 通过。
 
 ## 9. 后续功能衔接
 
 创建能力完成后，建议按下面顺序继续：
 
-1. `GET /api/projects`：工作台从空状态切换为真实项目列表。
-2. `GET /api/projects/:id`：进入项目页时验证记录存在，非法 ID 返回 404，而不是渲染一个空工作区。
-3. Supabase Auth：把 `owner_id` 改为必填，通过 API Guard 绑定当前用户，并补充用户级 RLS policy。
-4. 重命名、归档和删除 Project。
-5. 创建 Project 后按需初始化 Sandbox Workspace。数据库 Project 创建与耗时的 Sandbox 初始化应保持两个可观测状态，不要放进一个无法恢复的长事务。
+1. `GET /api/projects/:id`：进入项目页时验证记录存在，非法 ID 返回 404，而不是渲染一个空工作区。
+2. Supabase Auth：把 `owner_id` 改为必填，通过 API Guard 绑定当前用户，并补充用户级 RLS policy。
+3. 重命名、归档和软删除/回收站能力。
+4. 创建 Project 后按需初始化 Sandbox Workspace。数据库 Project 创建与耗时的 Sandbox 初始化应保持两个可观测状态，不要放进一个无法恢复的长事务。
 
 ## 10. 关键决策摘要
 
@@ -275,3 +342,5 @@ NestJS 当前没有安装 `class-validator`/`class-transformer`，也没有全�
 | RLS         | 创建表时立即启用       | 防止未来误用 anon key 直接暴露数据               |
 | 当前 owner  | 暂为 null              | 仓库尚无认证能力；仅限本地/单用户 MVP            |
 | 模块边界    | 独立 ProjectsModule    | 符合现有 NestJS 架构规划，便于后续列表和权限扩展 |
+| 列表排序    | created_at 降序        | 新创建项目优先，符合工作台最近使用预期           |
+| 删除语义    | 二次确认后硬删除       | 满足当前明确删除需求；未来回收站需升级数据模型   |

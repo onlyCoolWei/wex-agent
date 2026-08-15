@@ -1,11 +1,14 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types.js";
+
+export type { Database, Json } from "./database.types.js";
 
 export interface SupabaseConfig {
   url: string;
   key: string;
 }
 
-export type SupabaseServerClient = SupabaseClient;
+export type SupabaseServerClient = SupabaseClient<Database>;
 
 export interface SupabaseHealth {
   connected: boolean;
@@ -41,7 +44,7 @@ export function getSupabaseConfigFromEnv(env: Record<string, string | undefined>
 }
 
 export function createSupabaseServerClient(config: SupabaseConfig): SupabaseServerClient {
-  return createClient(config.url, config.key, {
+  return createClient<Database>(config.url, config.key, {
     auth: {
       autoRefreshToken: false,
       detectSessionInUrl: false,

@@ -29,6 +29,20 @@ export interface ArchitectureResponse {
   nodes: ArchitectureNode[];
 }
 
+export interface CreateProjectRequest {
+  name?: string;
+}
+
+export interface ProjectResponse {
+  id: string;
+  name: string;
+  status: "active" | "archived";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ProjectListResponse = ProjectResponse[];
+
 export interface AgentEvent<T = unknown> {
   id: string;
   runId: string;
