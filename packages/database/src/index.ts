@@ -57,9 +57,9 @@ export function createSupabaseServerClient(
 export async function checkSupabaseConnection(
   client: SupabaseServerClient,
 ): Promise<SupabaseHealth> {
-  const startedAt = performance.now();
+  const startedAt = Date.now();
   const { error } = await client.rpc("health_check");
-  const latencyMs = Math.round(performance.now() - startedAt);
+  const latencyMs = Date.now() - startedAt;
 
   if (error) {
     return { connected: false, latencyMs, error: error.message };
