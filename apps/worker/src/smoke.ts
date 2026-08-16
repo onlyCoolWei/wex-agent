@@ -18,10 +18,12 @@ async function smoke(): Promise<void> {
       runId,
       attemptId: randomUUID(),
       projectId: "smoke-project",
+      conversationId: "smoke-conversation",
+      assistantMessageId: "smoke-assistant-message",
       userId: "smoke-user",
       workspaceId: "smoke-workspace",
-      prompt,
-      agentId: "coding",
+      input: [{ role: "user", content: prompt }],
+      agentId: "main-chat",
     })) {
       console.log(JSON.stringify(event));
     }

@@ -19,13 +19,13 @@ const validModelEnv: NodeJS.ProcessEnv = {
 
 describe("model environment and catalog", () => {
   it("resolves stable aliases without upstream provider details", () => {
-    const model = new ModelCatalog().resolve("fast");
+    const model = new ModelCatalog().resolve("chat");
 
     assert.deepEqual(model, {
-      role: "fast",
-      alias: "coding-fast",
+      role: "chat",
+      alias: "gpt-5.6-luna",
       gateway: "litellm",
-      configVersion: "2026-08-16.1",
+      configVersion: "2026-08-16.2",
       capabilities: {
         streaming: true,
         tools: false,
@@ -72,9 +72,9 @@ describe("SDK event mapping", () => {
       data: { type: "output_text_delta", delta: "hello" },
     } as RunStreamEvent;
 
-    assert.deepEqual(mapper.map(sdkEvent), {
+    assert.deepEqual(mapper.map(sdkEvent, "message-1"), {
       type: "message.delta",
-      payload: { delta: "hello" },
+      payload: { messageId: "message-1", delta: "hello" },
     });
   });
 
@@ -90,11 +90,11 @@ describe("SDK event mapping", () => {
       type: "agent_updated_stream_event",
     } as RunStreamEvent;
 
-    assert.deepEqual(mapper.map(usageEvent), {
+    assert.deepEqual(mapper.map(usageEvent, "message-1"), {
       type: "usage.updated",
       payload: { inputTokens: 12, outputTokens: 4 },
     });
-    assert.equal(mapper.map(unknownEvent), undefined);
+    assert.equal(mapper.map(unknownEvent, "message-1"), undefined);
   });
 });
 

@@ -7,6 +7,9 @@ export function App() {
   const { pathname, navigate } = usePathname();
 
   if (pathname === "/workspace") return <WorkspacePage navigate={navigate} />;
-  if (pathname.startsWith("/projects/")) return <ProjectPage navigate={navigate} />;
+  if (pathname.startsWith("/projects/")) {
+    const projectId = decodeURIComponent(pathname.slice("/projects/".length).split("/")[0] ?? "");
+    return <ProjectPage navigate={navigate} projectId={projectId} />;
+  }
   return <HomePage navigate={navigate} />;
 }

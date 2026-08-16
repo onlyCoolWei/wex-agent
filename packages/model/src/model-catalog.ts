@@ -1,6 +1,6 @@
 import type { ResolvedModelSnapshot } from "@wex/contracts";
 import { DEFAULT_MODEL_CONFIG, type ModelConfig } from "./model-config.js";
-export type ModelRole = "coding" | "fast" | "reasoning";
+export type ModelRole = "chat" | "coding" | "fast" | "reasoning";
 
 export interface ModelDescriptor extends ResolvedModelSnapshot {
   role: ModelRole;

@@ -1,4 +1,4 @@
-import { Agent, Runner } from "@openai/agents";
+import { Agent, Runner, type AgentInputItem } from "@openai/agents";
 import type {
   AgentEvent,
   AgentEventType,
@@ -31,9 +31,13 @@ export class AgentRuntimeService implements AgentRuntime {
   constructor(
     @Inject(MODEL_ENVIRONMENT) environment: ModelEnvironment,
     @Inject(MODEL_CONFIG) private readonly modelConfig: ModelConfig,
+    @Inject(AgentConfigRegistry)
     private readonly agentConfigRegistry: AgentConfigRegistry,
+    @Inject(AgentFactory)
     private readonly agentFactory: AgentFactory,
+    @Inject(SdkEventMapper)
     private readonly eventMapper: SdkEventMapper,
+    @Inject(RunCancellationRegistry)
     private readonly cancellationRegistry: RunCancellationRegistry,
   ) {
     this.modelCatalog = new ModelCatalog(modelConfig);
@@ -80,6 +84,7 @@ export class AgentRuntimeService implements AgentRuntime {
           runId: input.runId,
           attemptId: input.attemptId,
           projectId: input.projectId,
+          conversationId: input.conversationId,
           agentId: agentConfig.id,
           agentVersion: agentConfig.version,
           modelAlias: model.alias,
@@ -93,7 +98,16 @@ export class AgentRuntimeService implements AgentRuntime {
         workspaceId: input.workspaceId,
       };
       const agent: Agent<WexRunContext> = this.agentFactory.create(agentConfig, model.alias);
-      const result = await runner.run(agent, input.prompt, {
+      const sdkInput: AgentInputItem[] = input.input.map((item) =>
+        item.role === "user"
+          ? { role: "user", content: item.content }
+          : {
+              role: "assistant",
+              status: "completed",
+              content: [{ type: "output_text", text: item.content }],
+            },
+      );
+      const result = await runner.run(agent, sdkInput, {
         stream: true,
         maxTurns: agentConfig.maxTurns,
         signal,
@@ -101,7 +115,7 @@ export class AgentRuntimeService implements AgentRuntime {
       });
 
       for await (const sdkEvent of result) {
-        const mapped = this.eventMapper.map(sdkEvent);
+        const mapped = this.eventMapper.map(sdkEvent, input.assistantMessageId);
         if (mapped) {
           yield event(mapped.type, mapped.payload);
         }
@@ -123,7 +137,7 @@ export class AgentRuntimeService implements AgentRuntime {
 
       const content = typeof result.finalOutput === "string" ? result.finalOutput : "";
       yield event("message.completed", {
-        messageId: `${input.runId}:assistant`,
+        messageId: input.assistantMessageId,
         content,
       });
       yield event("run.completed");

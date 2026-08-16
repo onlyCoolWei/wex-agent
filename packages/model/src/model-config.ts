@@ -7,8 +7,9 @@ export interface ModelConfig {
 }
 
 export const DEFAULT_MODEL_CONFIG: ModelConfig = {
-  version: "2026-08-16.1",
+  version: "2026-08-16.2",
   aliases: {
+    chat: "gpt-5.6-luna",
     coding: "coding-primary",
     fast: "coding-fast",
     reasoning: "reasoning-primary",

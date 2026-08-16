@@ -1,6 +1,7 @@
 export const AGENT_RUN_STATUSES = [
   "queued",
   "running",
+  "cancelling",
   "waiting_for_approval",
   "interrupted",
   "completed",
@@ -43,6 +44,76 @@ export interface ProjectResponse {
 
 export type ProjectListResponse = ProjectResponse[];
 
+export type MessageContentV1 = {
+  schemaVersion: 1;
+  parts: [{ type: "text"; text: string }];
+};
+
+export type ConversationStatus = "active" | "archived";
+
+export interface ConversationResponse {
+  id: string;
+  projectId: string;
+  title: string;
+  status: ConversationStatus;
+  lastMessageAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateConversationRequest {
+  title?: string;
+}
+
+export type ConversationListResponse = ConversationResponse[];
+
+export type ChatMessageRole = "user" | "assistant";
+export type ChatMessageStatus = "streaming" | "completed" | "failed" | "cancelled";
+
+export interface ChatMessageResponse {
+  id: string;
+  conversationId: string;
+  runId: string | null;
+  clientMessageId: string | null;
+  role: ChatMessageRole;
+  status: ChatMessageStatus;
+  content: MessageContentV1;
+  position: number;
+  error: { code: string; message: string } | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface AgentRunResponse {
+  id: string;
+  conversationId: string;
+  userMessageId: string;
+  assistantMessageId: string;
+  status: AgentRunStatus;
+  modelAlias: string;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+export interface MessageListResponse {
+  items: ChatMessageResponse[];
+  nextBefore: number | null;
+  activeRun: AgentRunResponse | null;
+}
+
+export interface SendMessageRequest {
+  clientMessageId: string;
+  content: MessageContentV1;
+}
+
+export interface SendMessageResponse {
+  userMessage: ChatMessageResponse;
+  assistantMessage: ChatMessageResponse;
+  run: AgentRunResponse;
+  eventsUrl: string;
+}
+
 export interface AgentEvent<T = unknown> {
   id: string;
   runId: string;
@@ -76,10 +147,17 @@ export interface StartAgentRunInput {
   runId: string;
   attemptId: string;
   projectId: string;
+  conversationId: string;
+  assistantMessageId: string;
   userId: string;
   workspaceId: string;
-  prompt: string;
+  input: ConversationInputItem[];
   agentId?: string;
+}
+
+export interface ConversationInputItem {
+  role: ChatMessageRole;
+  content: string;
 }
 
 export interface ResumeAgentRunInput {
@@ -97,7 +175,7 @@ export type RunStartedPayload = {
   model: ResolvedModelSnapshot;
 };
 
-export type MessageDeltaPayload = { delta: string };
+export type MessageDeltaPayload = { messageId: string; delta: string };
 export type MessageCompletedPayload = { messageId: string; content: string };
 export type UsageUpdatedPayload = {
   inputTokens?: number;

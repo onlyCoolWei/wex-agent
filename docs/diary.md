@@ -1,5 +1,8 @@
 ### 2026-08-16
 
+- 🔧 修复 Worker 对话处理器在 tsx 开发启动下类依赖元数据缺失导致 Agent Runtime 未注入的问题
+- 🔧 优化前端对话页移动端适配，修复双栏宽度残留与消息区高度塌陷，并完善安全区和窄屏输入体验
+- ✨ 完成对话 Agent Phase 1，打通 gpt-5.6-luna、消息持久化、Worker 队列与 SSE 流式聊天链路。
 - 🔧 完成 OpenAI Agents SDK + LiteLLM Phase 1 接入，统一多 Agent 配置与模型管理，补齐流式 Runtime、事件契约、本地网关及合约测试。
 - 🔧 制定并收敛了 OpenAI Agents SDK 基于 LiteLLM 单一网关与 Chat Completions 通道的接入方案，同时调整了 Tailwind 配置以保留任意值工具类写法。
 - ✨ 完善 Project 工作台管理闭环，接入真实列表、响应式状态视图、删除 API 与二次确认，并同步补全技术方案

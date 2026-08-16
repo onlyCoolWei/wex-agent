@@ -88,9 +88,11 @@ describe("AgentRuntimeService LiteLLM contract", () => {
       runId: "run-test",
       attemptId: "attempt-test",
       projectId: "project-test",
+      conversationId: "conversation-test",
+      assistantMessageId: "message-test",
       userId: "user-test",
       workspaceId: "workspace-test",
-      prompt: "Say hello",
+      input: [{ role: "user", content: "Say hello" }],
     })) {
       events.push(event);
     }

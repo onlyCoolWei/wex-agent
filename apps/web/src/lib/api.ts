@@ -1,4 +1,14 @@
-import type { CreateProjectRequest, ProjectListResponse, ProjectResponse } from "@wex/contracts";
+import type {
+  ConversationListResponse,
+  ConversationResponse,
+  CreateConversationRequest,
+  CreateProjectRequest,
+  MessageListResponse,
+  ProjectListResponse,
+  ProjectResponse,
+  SendMessageRequest,
+  SendMessageResponse,
+} from "@wex/contracts";
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
@@ -57,4 +67,62 @@ export async function deleteProject(projectId: string): Promise<void> {
   if (!response.ok) {
     throw new Error("删除项目失败");
   }
+}
+
+export async function listConversations(projectId: string): Promise<ConversationListResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/projects/${encodeURIComponent(projectId)}/conversations`,
+  );
+  if (!response.ok) throw new Error("获取会话失败");
+  return (await response.json()) as ConversationListResponse;
+}
+
+export async function createConversation(
+  projectId: string,
+  input: CreateConversationRequest = {},
+): Promise<ConversationResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/projects/${encodeURIComponent(projectId)}/conversations`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  if (!response.ok) throw new Error("创建会话失败");
+  return (await response.json()) as ConversationResponse;
+}
+
+export async function listMessages(conversationId: string): Promise<MessageListResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/conversations/${encodeURIComponent(conversationId)}/messages`,
+  );
+  if (!response.ok) throw new Error("获取消息失败");
+  return (await response.json()) as MessageListResponse;
+}
+
+export async function sendMessage(
+  conversationId: string,
+  input: SendMessageRequest,
+): Promise<SendMessageResponse> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/conversations/${encodeURIComponent(conversationId)}/messages`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": input.clientMessageId,
+      },
+      body: JSON.stringify(input),
+    },
+  );
+  if (!response.ok) {
+    const error = (await response.json().catch(() => null)) as { message?: string } | null;
+    throw new Error(error?.message ?? "发送消息失败");
+  }
+  return (await response.json()) as SendMessageResponse;
+}
+
+export function getAgentRunEventsUrl(runId: string): string {
+  return `${API_BASE_URL}/api/agent-runs/${encodeURIComponent(runId)}/events`;
 }

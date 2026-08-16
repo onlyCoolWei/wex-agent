@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc --outDir dist --declaration false",
-    "dev": "tsx --env-file=../../.env watch src/main.ts",
+    "dev": "tsx watch --env-file=../../.env src/main.ts",
     "smoke": "tsx --env-file=../../.env src/smoke.ts",
     "start": "node dist/main.js",
     "test": "pnpm --filter @wex/contracts build && pnpm --filter @wex/model build && tsx --test src/agent-runtime/*.spec.ts src/agents/*.spec.ts",
@@ -17,6 +17,7 @@
     "@nestjs/core": "^11.0.0",
     "@openai/agents": "0.16.0",
     "@wex/contracts": "workspace:*",
+    "@wex/database": "workspace:*",
     "@wex/model": "workspace:*",
     "@wex/sandbox": "workspace:*",
     "reflect-metadata": "^0.2.2",

@@ -136,6 +136,9 @@ importers:
       '@wex/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@wex/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@wex/model':
         specifier: workspace:*
         version: link:../../packages/model

@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import {
+  type CSSProperties,
   type KeyboardEvent,
   type PointerEvent as ReactPointerEvent,
   useRef,
@@ -12,7 +13,7 @@ import { PreviewPanel, type PreviewState } from "./preview-panel.js";
 
 type MobilePanel = "chat" | "preview";
 
-export function ProjectPage({ navigate }: { navigate: Navigate }) {
+export function ProjectPage({ navigate, projectId }: { navigate: Navigate; projectId: string }) {
   const [previewState, setPreviewState] = useState<PreviewState>("idle");
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("chat");
   const [chatWidth, setChatWidth] = useState(
@@ -31,10 +32,6 @@ export function ProjectPage({ navigate }: { navigate: Navigate }) {
     event.currentTarget.setPointerCapture(event.pointerId);
     resizeFromPointer(event);
   };
-  const generate = () => {
-    setPreviewState("starting");
-    window.setTimeout(() => setPreviewState("ready"), 1500);
-  };
   const retry = () => {
     if (previewState === "idle") return;
     setPreviewState("starting");
@@ -49,8 +46,8 @@ export function ProjectPage({ navigate }: { navigate: Navigate }) {
   };
 
   return (
-    <main className="fixed inset-0 overflow-hidden bg-canvas">
-      <div className="flex h-[52px] items-center border-b border-line bg-paper px-[14px] md:hidden">
+    <main className="fixed inset-0 flex h-dvh flex-col overflow-hidden bg-canvas">
+      <div className="flex h-[calc(52px+env(safe-area-inset-top))] shrink-0 items-center border-b border-line bg-paper px-[14px] pt-[env(safe-area-inset-top)] md:hidden">
         <Button
           variant="ghost"
           type="button"
@@ -79,12 +76,12 @@ export function ProjectPage({ navigate }: { navigate: Navigate }) {
         </div>
         <span className="w-8" />
       </div>
-      <div className="flex h-[calc(100%-52px)] md:h-full" ref={workspaceRef}>
+      <div className="flex min-h-0 flex-1" ref={workspaceRef}>
         <div
-          className={`min-w-0 overflow-hidden md:block md:min-w-[320px] md:max-w-[640px] md:shrink-0 ${mobilePanel === "chat" ? "block w-full" : "hidden"}`}
-          style={{ width: chatWidth }}
+          className={`min-w-0 overflow-hidden md:block md:w-[var(--chat-width)] md:min-w-[320px] md:max-w-[640px] md:shrink-0 ${mobilePanel === "chat" ? "block w-full" : "hidden"}`}
+          style={{ "--chat-width": `${chatWidth}px` } as CSSProperties}
         >
-          <ChatPanel navigate={navigate} onGenerate={generate} />
+          <ChatPanel navigate={navigate} projectId={projectId} />
         </div>
         <div
           className="relative z-10 hidden h-full w-px shrink-0 cursor-col-resize touch-none bg-[#cfd3cc] after:absolute after:inset-y-0 after:left-[-4px] after:w-[9px] hover:bg-[#486154] focus-visible:bg-[#486154] focus-visible:shadow-[0_0_0_1px_#486154] md:block"
@@ -102,7 +99,7 @@ export function ProjectPage({ navigate }: { navigate: Navigate }) {
           onKeyDown={adjustWithKeyboard}
         />
         <div
-          className={`min-w-0 flex-1 overflow-hidden md:block md:min-w-[440px] ${mobilePanel === "preview" ? "block" : "hidden"}`}
+          className={`min-w-0 flex-1 overflow-hidden md:block md:min-w-[440px] ${mobilePanel === "preview" ? "block w-full" : "hidden"}`}
         >
           <PreviewPanel state={previewState} onRetry={retry} />
         </div>

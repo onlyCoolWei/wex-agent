@@ -9,7 +9,7 @@ export interface MappedSdkEvent {
 
 @Injectable()
 export class SdkEventMapper {
-  map(event: RunStreamEvent): MappedSdkEvent | undefined {
+  map(event: RunStreamEvent, messageId: string): MappedSdkEvent | undefined {
     if (event.type !== "raw_model_stream_event") {
       return undefined;
     }
@@ -17,7 +17,7 @@ export class SdkEventMapper {
     if (event.data.type === "output_text_delta") {
       return {
         type: "message.delta",
-        payload: { delta: event.data.delta },
+        payload: { messageId, delta: event.data.delta },
       };
     }
 
