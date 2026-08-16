@@ -5,19 +5,23 @@
   "type": "module",
   "scripts": {
     "build": "tsc --outDir dist --declaration false",
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx --env-file=../../.env watch src/main.ts",
+    "smoke": "tsx --env-file=../../.env src/smoke.ts",
     "start": "node dist/main.js",
+    "test": "pnpm --filter @wex/contracts build && pnpm --filter @wex/model build && tsx --test src/agent-runtime/*.spec.ts src/agents/*.spec.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
+    "@openai/agents": "0.16.0",
     "@wex/contracts": "workspace:*",
     "@wex/model": "workspace:*",
     "@wex/sandbox": "workspace:*",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

@@ -1,11 +1,4 @@
-export type ModelRole = "coding" | "fast" | "reasoning" | "vision";
-
-export interface ModelDescriptor {
-  id: string;
-  provider: string;
-  role: ModelRole;
-}
-
-export interface ModelProvider {
-  getModel(role: ModelRole): Promise<ModelDescriptor>;
-}
+export * from "./agents-model-provider.factory.js";
+export * from "./env.js";
+export * from "./model-catalog.js";
+export * from "./model-config.js";

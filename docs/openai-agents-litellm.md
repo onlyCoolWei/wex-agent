@@ -55,7 +55,7 @@ pnpm --filter @wex/model add @openai/agents
 
 ### 4.2 LiteLLM 采用独立 Proxy 服务
 
-Wex 是 Node.js 服务，不在 Worker 中嵌入 LiteLLM Python SDK。LiteLLM 以独立容器运行，对 Worker 暴露 OpenAI-compatible HTTP API：
+Wex 是 Node.js 服务，不在 Worker 中嵌入 LiteLLM Python SDK。LiteLLM 作为仓库外部的独立服务运行，对 Worker 暴露 OpenAI-compatible HTTP API；本仓库不负责部署或启动 LiteLLM：
 
 ```text
 Agent Worker
@@ -148,6 +148,10 @@ API Server -> PostgreSQL -> Queue/Dispatcher -> Agent Worker
 
 ```text
 apps/worker/src/
+  agents/
+    agent-config.ts
+    agent-config.registry.ts
+    coding-agent.config.ts
   agent-runtime/
     agent-runtime.module.ts
     agent-runtime.service.ts
@@ -157,6 +161,7 @@ apps/worker/src/
     run-cancellation.registry.ts
 
 packages/model/src/
+  model-config.ts
   model-catalog.ts
   model-policy.ts
   agents-model-provider.factory.ts
@@ -166,17 +171,17 @@ packages/contracts/src/
   agent-run.ts
   agent-event.ts
 
-infra/litellm/
-  config.yaml
-  README.md
 ```
 
 职责约束：
 
 - `AgentRuntimeService`：运行 SDK、控制生命周期、映射结果，不决定供应商密钥。
-- `AgentFactory`：构建 instructions、tools、guardrails 和 output type。
+- `agents/`：按 Agent 保存版本、模型角色、最大轮数、instructions、tools 与 guardrails 配置，为主 Agent、子 Agent 和 Handoff 扩展提供统一入口。
+- `AgentConfigRegistry`：按稳定 `agentId` 解析 Agent 配置，Runtime 不从环境变量读取 Agent 行为配置。
+- `AgentFactory`：根据解析后的 Agent 配置构建 SDK Agent。
 - `ToolRegistry`：将 Wex Sandbox 能力包装为 SDK Function Tool。
 - `ModelCatalog`：按角色返回 Wex 模型策略，不发起模型请求。
+- `ModelConfig`：集中保存模型别名、配置版本与模型网关请求超时，不从环境变量读取模型策略。
 - `AgentsModelProviderFactory`：创建唯一指向 LiteLLM 的 Agents SDK `OpenAIProvider`。
 - `SdkEventMapper`：将 SDK 事件转为稳定的 Wex `AgentEvent`。
 - `EventSink`：负责事件序号、持久化和实时通知。
@@ -186,22 +191,13 @@ infra/litellm/
 ### 7.1 Worker 环境变量
 
 ```dotenv
-# 唯一模型网关
-LITELLM_BASE_URL=http://localhost:4000/v1
+# 唯一远程模型网关
+LITELLM_BASE_URL=https://litellm.example.com/v1
 LITELLM_API_KEY=
 
 # OpenAI Trace，仅用于观测数据导出
 OPENAI_TRACE_API_KEY=
 
-# Wex 模型策略
-WEX_MODEL_CODING_PRIMARY=coding-primary
-WEX_MODEL_CODING_FAST=coding-fast
-WEX_MODEL_REASONING_PRIMARY=reasoning-primary
-WEX_MODEL_CONFIG_VERSION=2026-08-16.1
-
-# Runtime
-AGENT_MAX_TURNS=80
-AGENT_REQUEST_TIMEOUT_MS=120000
 ```
 
 约束：
@@ -212,36 +208,17 @@ AGENT_REQUEST_TIMEOUT_MS=120000
 - OpenAI 等上游模型供应商密钥只注入 LiteLLM，不能注入 API 或 Worker。
 - `OPENAI_TRACE_API_KEY` 是独立的服务端凭据，只允许用于 Trace 导出，不能传给模型 Provider。
 - `LITELLM_BASE_URL` 必须带协议并指向 API 根路径，启动时进行格式校验。
+- Agent 版本、模型角色、最大轮数、instructions、tools 和 guardrails 存放在 `apps/worker/src/agents/`，不得通过环境变量配置。
+- 模型别名、配置版本与模型网关请求超时存放在 `packages/model/src/model-config.ts`，不得通过环境变量配置。
 
-### 7.2 LiteLLM 最小配置示例
+### 7.2 远程 LiteLLM 服务契约
 
-```yaml
-model_list:
-  - model_name: coding-primary
-    litellm_params:
-      model: os.environ/LITELLM_CODING_PRIMARY_MODEL
-      api_key: os.environ/LITELLM_CODING_PRIMARY_API_KEY
+本仓库只保存 Worker 访问远程 LiteLLM 所需的 URL 和 virtual key，不保存 LiteLLM 的 master key、上游供应商密钥或自托管部署配置。远程服务需要：
 
-  - model_name: coding-fast
-    litellm_params:
-      model: os.environ/LITELLM_CODING_FAST_MODEL
-      api_key: os.environ/LITELLM_CODING_FAST_API_KEY
-
-router_settings:
-  num_retries: 2
-  timeout: 120
-
-general_settings:
-  master_key: os.environ/LITELLM_MASTER_KEY
-  database_url: os.environ/LITELLM_DATABASE_URL
-```
-
-生产环境要求：
-
-- 镜像使用明确版本，禁止使用 `main-latest`。
-- 配置中的模型和密钥通过 Secret Manager 注入。
-- LiteLLM 使用独立数据库 schema 或独立数据库，不与 Wex migration 混管。
-- 多实例路由、限流或共享缓存需要 Redis 时，再显式引入 Redis。
+- 提供 OpenAI-compatible `/v1` API 根路径。
+- 为 Worker 签发权限受限的 virtual key。
+- 提供 Wex 配置中使用的稳定模型别名，例如 `coding-fast`。
+- 在服务端管理上游供应商密钥、预算、限流、路由与审计策略。
 - 先为单个模型别名配置健康检查，不在首版启用跨模型静默 fallback。
 
 ## 8. Agents SDK 接入骨架
@@ -293,15 +270,14 @@ interface AgentRuntime {
 ```ts
 const provider = providerFactory.create();
 const runner = new Runner({ modelProvider: provider });
+const agentConfig = agentConfigRegistry.get(input.agentId);
+const model = modelCatalog.resolve(agentConfig.modelRole);
 
-const agent = agentFactory.createCodingAgent({
-  model: model.alias,
-  projectId: input.projectId,
-});
+const agent = agentFactory.create(agentConfig, model.alias);
 
 const result = await runner.run(agent, input.prompt, {
   stream: true,
-  maxTurns: input.maxTurns,
+  maxTurns: agentConfig.maxTurns,
   signal: cancellationRegistry.getSignal(input.runId),
   context: input.context,
 });
@@ -523,7 +499,7 @@ INTERNAL_ERROR
 ### 15.3 集成测试
 
 - 使用假的 OpenAI-compatible Server 验证 Worker，不依赖真实费用和网络。
-- 使用本地 LiteLLM 容器验证鉴权、别名、Streaming 和错误映射。
+- 使用受控的远程 LiteLLM 测试环境验证鉴权、别名、Streaming 和错误映射。
 - 使用单个受控真实模型运行 smoke test，验证端到端事件关联与 Usage。
 - 验证 OpenAI Traces Dashboard 能按 `runId` 和 `attemptId` 定位完整 Agent Loop、模型请求与 Tool Span。
 - 模拟 Trace 导出失败，确认 AgentRun 仍能正常完成并写入 Wex Event。
@@ -535,7 +511,7 @@ INTERNAL_ERROR
 
 - 安装 `@openai/agents` 和 Zod v4。
 - 扩展 `@wex/model`，实现模型目录与 Provider 工厂。
-- 本地运行 LiteLLM Proxy，配置一个 `coding-fast` 别名。
+- 连接已有远程 LiteLLM Proxy，并确认它提供 `coding-fast` 别名。
 - Worker 执行一个无 Tool 的流式 AgentRun。
 - 配置独立 OpenAI Trace 凭据，并验证 Traces Dashboard 可查询对应 Run。
 - 输出标准化事件并完成单元测试。
@@ -587,7 +563,7 @@ INTERNAL_ERROR
 实施 Phase 1 前需要确定：
 
 1. 首批上游模型供应商及模型别名，不在代码中写死具体供应商模型。
-2. LiteLLM 部署位置、数据库和 Secret Manager 方案。
+2. 远程 LiteLLM 的服务所有者、可用性目标和密钥轮换方案。
 3. 首版是否立即落 AgentRun/Event 表，还是先以 Worker CLI smoke test 验证模型链路。
 4. OpenAI Trace 的敏感数据脱敏、访问权限和保留周期。
 
@@ -600,4 +576,4 @@ INTERNAL_ERROR
 - [OpenAI API 鉴权](https://developers.openai.com/api/reference/overview#authentication)
 - [LiteLLM 官方文档](https://docs.litellm.ai/)
 
-> SDK 与 LiteLLM 仍在持续演进。实现时应锁定精确依赖与容器版本，并以对应版本的官方类型定义和兼容性测试结果为准。
+> SDK 与 LiteLLM 仍在持续演进。实现时应锁定精确依赖版本，并以远程服务的兼容性测试结果为准。

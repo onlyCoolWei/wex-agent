@@ -17,5 +17,9 @@
   "devDependencies": {
     "tsup": "^8.4.0",
     "typescript": "^5.8.0"
+  },
+  "dependencies": {
+    "@openai/agents": "0.16.0",
+    "@wex/contracts": "workspace:*"
   }
 }
