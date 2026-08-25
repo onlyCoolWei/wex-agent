@@ -12,9 +12,10 @@ export function usePathname() {
   }, []);
 
   const navigate: Navigate = (path) => {
-    if (path === window.location.pathname) return;
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    if (path === currentPath) return;
     window.history.pushState({}, "", path);
-    setPathname(path);
+    setPathname(new URL(path, window.location.origin).pathname);
   };
 
   return { pathname, navigate };

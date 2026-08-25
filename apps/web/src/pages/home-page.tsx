@@ -1,9 +1,11 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { AppHeader } from "../components/app-header.js";
 import { Button } from "../components/ui/button.js";
+import { useAuth } from "../lib/auth.js";
 import type { Navigate } from "../routing.js";
 
 export function HomePage({ navigate }: { navigate: Navigate }) {
+  const { user, loading } = useAuth();
   return (
     <main className="min-h-dvh overflow-hidden bg-paper">
       <AppHeader navigate={navigate} />
@@ -29,7 +31,8 @@ export function HomePage({ navigate }: { navigate: Navigate }) {
           <Button
             className="mt-[34px] h-[46px] px-[21px]"
             type="button"
-            onClick={() => navigate("/workspace")}
+            onClick={() => navigate(user ? "/workspace" : "/auth?redirect=%2Fworkspace")}
+            disabled={loading}
           >
             进入工作台 <ArrowRight size={17} />
           </Button>

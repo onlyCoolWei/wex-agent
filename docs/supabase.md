@@ -19,6 +19,25 @@ cp .env.example .env
 
 Supabase 的 secret/service-role key 会绕过 Row Level Security，只能放在 API、Worker、定时任务等受控服务端组件中。浏览器端只能使用 publishable/anon key，并且仍应配置 RLS。
 
+## 2.1 Web 端 Auth 配置
+
+认证页面使用浏览器安全的 publishable/anon key，不得使用 `SUPABASE_SECRET_KEY`。前后端共用同一个 `SUPABASE_URL`，在根目录 `.env` 中补充：
+
+```text
+SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-browser-key
+```
+
+在 Supabase Dashboard 的 **Authentication -> URL Configuration** 中，将本地回调地址加入 Redirect URLs：
+
+```text
+http://localhost:5173/auth/callback
+```
+
+在 **Authentication -> Providers -> Google** 中启用 Google，并填写 Google Cloud OAuth client ID、secret 及 Supabase 提供的 callback URL。
+
+Email provider 需要启用邮箱确认。当前 Web 端使用 Supabase 默认的 `{{ .ConfirmationURL }}` 确认链接模板：用户注册后点击邮件链接，回到 `/auth/callback` 完成会话建立。验证码模板需要自定义邮件模板和 SMTP，当前方案不依赖这项配置。
+
 ## 2. 应用数据库 migration
 
 先安装 Supabase CLI。macOS 可以使用：

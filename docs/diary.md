@@ -1,3 +1,20 @@
+### 2026-08-25
+
+- 🔧 移除认证页登录/注册模式切换，统一为自动识别账号状态的单一登录入口
+
+### 2026-08-24
+
+- 🔧 将注册确认流程从验证码输入改为 Supabase 默认确认邮件链接，兼容 Free 计划邮件模板限制
+
+### 2026-08-23
+
+- ✨ 补充注册登录业务交互文档，明确 Supabase Email/Password 验证码注册登录与 Google OAuth 回调流程
+- ✨ 实现 Web 端 Supabase 登录注册闭环，接入验证码注册、Google OAuth 回调、会话路由保护与账户退出菜单
+- 🔧 修复认证页 redirect 递归导致 URL 无限增长和 loading 卡住的问题，并为 Supabase 会话初始化增加超时兜底
+- 🔧 合并前后端 Supabase 项目 URL 配置，统一使用 `SUPABASE_URL` 并通过 Vite 安全注入 Web 端
+- 🔧 修复 Vite 未读取仓库根目录 `.env` 导致 Web 端认证配置被误判为缺失的问题
+- 🔧 补充 Supabase Confirm signup OTP 邮件模板配置，避免继续发送默认确认链接
+
 ### 2026-08-16
 
 - 🔧 修复 Worker 对话处理器在 tsx 开发启动下类依赖元数据缺失导致 Agent Runtime 未注入的问题
