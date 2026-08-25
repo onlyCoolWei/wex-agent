@@ -1,4 +1,19 @@
-# Wex 对话 Agent Phase 1 技术方案
+# Conversations and Agent Runs Phase 1 对话 Agent 技术方案
+
+Status: Current
+Last verified: 2026-08-26
+Read when: 修改消息持久化、Agent Run、Worker 执行、Agent Event 或 SSE
+Applies to: API、Worker、Contracts 和数据库中的持久化对话链路
+
+## Related
+
+- Business: `docs/business/conversations-and-agent-runs.md`
+- Technical: `docs/technical/openai-agents-litellm.md`
+- Architecture: `ARCHITECTURE.md`
+
+## Purpose
+
+> 文档定位：持久化对话 Phase 1 的技术设计与验收依据。当前业务能力、状态不变量和未支持项以 [`../business/conversations-and-agent-runs.md`](../business/conversations-and-agent-runs.md) 为准。
 
 ## 1. 目标
 
@@ -572,8 +587,8 @@ Phase 1 UI 至少覆盖：空会话、历史加载、发送中、排队中、流
 
 ## 17. 参考
 
-- 现有仓库方案：`docs/openai-agents-litellm.md`
-- 现有总体技术栈：`docs/technical-stack.md`
+- 现有仓库方案：`docs/technical/openai-agents-litellm.md`
+- 现有总体技术栈与边界：`ARCHITECTURE.md`；阶段路线参考：`docs/technical/architecture-roadmap.md`
 - OpenAI Agents SDK 的运行、流式与状态管理边界：[Running agents](https://developers.openai.com/api/docs/guides/agents/running-agents)
 
 本方案选择由 Wex 数据库管理 Conversation 历史，而不是使用供应商侧会话状态。官方文档列出了多种状态管理方式；工程上应只选择一种事实来源，避免重复拼接或历史分叉。

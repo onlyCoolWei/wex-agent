@@ -1,4 +1,19 @@
-# Project 创建、展示与删除技术方案
+# Projects Project 创建、展示与删除技术方案
+
+Status: Current
+Last verified: 2026-08-26
+Read when: 修改 Project API、数据库 migration、工作台项目列表、创建或删除链路
+Applies to: `apps/api/src/projects`、`apps/web/src/pages/workspace-page.tsx`、Contracts 和 Projects migration
+
+## Related
+
+- Business: `docs/business/projects.md`
+- Design: `docs/design/workspace-layout.md`
+- Architecture: `ARCHITECTURE.md`
+
+## Purpose
+
+> 文档定位：Project 首期实现方案与 API 细节。修改当前业务行为前先读 [`../business/projects.md`](../business/projects.md)，并以实际 Contracts、migration 和代码校准本文中的阶段描述。
 
 ## 1. 目标与范围
 

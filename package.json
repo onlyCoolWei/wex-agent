@@ -13,6 +13,7 @@
     "deps": "turbo ls",
     "graph": "turbo run build --graph=.turbo/build-graph.html",
     "plan": "turbo run build --dry-run=text",
+    "check:docs": "node scripts/check-docs.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "turbo run typecheck",

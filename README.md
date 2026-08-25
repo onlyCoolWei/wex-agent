@@ -18,7 +18,11 @@ packages/
   shared/               通用常量与工具
 ```
 
-详细设计见 [技术栈与架构设计](docs/technical-stack.md)。
+开发入口见 [CONTRIBUTING.md](CONTRIBUTING.md)，文档入口见 [docs 文档导航](docs/README.md)；总体技术架构见 [ARCHITECTURE.md](ARCHITECTURE.md)，全局设计约束见 [DESIGN.md](DESIGN.md)。
+
+## 协作开发
+
+开始修改仓库前，请先阅读根目录的 [AGENTS.md](AGENTS.md)。涉及产品行为时，从 [业务知识库](docs/business/README.md) 了解产品、术语、能力状态和对应业务域；文档写法、模块边界、标准开发流程、风险分级与 Code Review 清单见 [协作开发与 Vibe Coding 质量守则](docs/collaboration-guide.md)。
 
 ## 开发环境
 
@@ -38,7 +42,7 @@ cp .env.example .env
 # 编辑 .env，填写 SUPABASE_URL 和 SUPABASE_SECRET_KEY
 ```
 
-API 启动后可通过 <http://localhost:3001/api/health/database> 验证 Supabase 连接。首次连接还需要将 `supabase/migrations/` 中的 migration 推送到项目，具体步骤见 [Supabase 接入指南](docs/supabase.md)。
+API 启动后可通过 <http://localhost:3001/api/health/database> 验证 Supabase 连接。首次连接还需要将 `supabase/migrations/` 中的 migration 推送到项目，具体步骤见 [Supabase 接入指南](docs/technical/supabase.md)。
 
 启动全部应用：
 
@@ -92,15 +96,17 @@ pnpm plan
 - pnpm workspace 与 Turborepo 编排
 - React Web、NestJS API、NestJS Worker 独立进程
 - 共享 Contracts、Sandbox、Model 和 Database 边界
-- Web 到 API 的健康检查链路
-- Supabase 服务端客户端、配置校验与数据库健康检查
+- Supabase Email/Password、Google OAuth 与 Web 受保护路由
+- Project 创建、列表、打开、删除与 Supabase 持久化
+- Conversation、Message、AgentRun、AgentEvent 持久化和 SSE 流式对话
+- OpenAI Agents SDK + LiteLLM 单一网关的 Worker 执行链路
 
 暂未接入：
 
-- Drizzle ORM 与 AgentRun 等业务 Schema
-- BullMQ / Redis
-- Docker Sandbox 实现
-- 基于 OpenAI Agents SDK 的 Agent Runtime
-- AgentRun、Event 与 Checkpoint 持久化
+- API 身份校验、基于 `owner_id` 的多用户数据隔离与完整 RLS 策略
+- BullMQ / Redis 与多 Worker 生产调度
+- Docker Sandbox、文件/命令 Tool 与真实网站 Preview
+- AgentRun 的取消、重试、恢复、审批与 Checkpoint
+- 文件版本、发布、团队协作与评测体系
 
-这些能力会按 `docs/technical-stack.md` 中的阶段规划逐步加入。
+当前产品能力和限制以 [业务知识库](docs/business/README.md) 为准，当前架构边界见 [ARCHITECTURE.md](ARCHITECTURE.md)，技术路线参考见 `docs/technical/architecture-roadmap.md`。

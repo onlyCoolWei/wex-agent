@@ -1,4 +1,20 @@
-# Wex Web UI 布局设计
+# Project Workspace Design 项目工作区设计
+
+Status: Current
+Last verified: 2026-08-26
+Read when: 修改首页、工作台、Project 双栏、Chat、Preview 或响应式布局
+Applies to: `apps/web/src/pages` 的核心页面和 `/projects/:projectId`
+
+## Related
+
+- Business: `docs/business/workspace-and-preview.md`
+- Technical: `docs/technical/project-creation.md`
+- Architecture: `ARCHITECTURE.md`
+- Design system: `DESIGN.md`
+
+## Purpose
+
+> 文档定位：Web 首期信息架构与布局参考。当前 Project 工作区和 Preview 能力边界以 [`../business/workspace-and-preview.md`](../business/workspace-and-preview.md) 为准。
 
 ## 1. 文档目标
 

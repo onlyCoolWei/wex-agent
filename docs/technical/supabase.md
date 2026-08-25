@@ -1,4 +1,17 @@
-# Supabase 接入
+# Identity and Persistence Supabase 接入
+
+Status: Current
+Last verified: 2026-08-26
+Read when: 修改 Supabase Auth、服务端密钥、数据库 Client、migration 或 RLS
+Applies to: `packages/database`、API/Worker 服务端配置和 Web Auth 配置
+
+## Related
+
+- Business: `docs/business/identity-and-access.md`
+- Architecture: `ARCHITECTURE.md`
+- ADR: `docs/adr/README.md`
+
+## Purpose
 
 当前项目通过服务端 `@supabase/supabase-js` 访问 Supabase。高权限 key 只在 API/Worker 的服务端环境中使用，不应进入 `apps/web`、浏览器代码或 Git。
 

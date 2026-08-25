@@ -1,4 +1,19 @@
-# Coding Agent 技术栈与架构设计
+# Coding Agent Architecture Roadmap 技术栈与架构路线
+
+Status: Reference
+Last verified: 2026-08-26
+Read when: 评估未来 Runtime、Sandbox、队列、工具或发布能力的技术路线
+Applies to: 目标架构和分阶段方案，不替代根目录当前架构事实
+
+## Related
+
+- Current architecture: `ARCHITECTURE.md`
+- Technical index: `docs/technical/README.md`
+- Business context: `docs/business/README.md`
+
+## Purpose
+
+> 文档定位：Wex Coding Agent 的目标架构与分阶段技术路线，不代表所有能力均已实现。当前产品事实和能力状态见 [`../business/README.md`](../business/README.md)。
 
 本文面向类似 Lovable、Claude Code 或 Codex 的 Coding Agent 产品，给出一套适合 TypeScript 团队的技术选型与系统边界。
 

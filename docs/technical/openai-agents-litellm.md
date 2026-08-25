@@ -1,6 +1,17 @@
-# OpenAI Agents SDK 与 LiteLLM 接入技术方案
+# Model Gateway and Agent Runtime 模型网关与 Agent Runtime
 
-## 1. 文档目的
+Status: Current
+Last verified: 2026-08-26
+Read when: 修改 Agents SDK、LiteLLM、模型别名、Runtime、流式事件或 Provider 适配
+Applies to: `apps/worker/src/agent-runtime`、`apps/worker/src/agents` 和 `packages/model`
+
+## Related
+
+- Business: `docs/business/conversations-and-agent-runs.md`
+- Architecture: `ARCHITECTURE.md`
+- ADR: `docs/adr/README.md`
+
+## Purpose
 
 本文定义 Wex Agent 接入 OpenAI Agents SDK 与 LiteLLM 的技术边界、运行链路和分阶段实施方案，作为后续开发、联调与验收依据。
 
