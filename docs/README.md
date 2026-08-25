@@ -21,8 +21,8 @@ Applies to: `docs/` 正式项目文档的分类、路由和维护边界
 
 1. 根目录 [`AGENTS.md`](../AGENTS.md)：修改边界、质量要求和强制流程。
 2. 根目录 [`CONTRIBUTING.md`](../CONTRIBUTING.md)：开发者快速流程和常用验证命令。
-3. [`business/README.md`](business/README.md)：产品定义、能力状态、领域地图和选读路由。
-4. [`business/glossary.md`](business/glossary.md)：统一业务术语。
+3. [`glossary.md`](glossary.md)：统一 Business、Design、Technical 和代码中的稳定术语。
+4. [`business/README.md`](business/README.md)：产品定义、能力状态、领域地图和选读路由。
 5. 对应业务领域文档，再按需要阅读技术和设计文档。
 
 ## 文档分类
@@ -30,6 +30,7 @@ Applies to: `docs/` 正式项目文档的分类、路由和维护边界
 | 目录/文件                                          | 用途                                 | Codex 默认行为                         |
 | -------------------------------------------------- | ------------------------------------ | -------------------------------------- |
 | [`business/`](business/)                           | 产品事实、业务规则、不变量和验收基线 | 产品行为修改前必须按任务读取           |
+| [`glossary.md`](glossary.md)                       | 跨类别稳定术语及概念边界             | 涉及产品、设计或技术概念时读取         |
 | [`../CONTRIBUTING.md`](../CONTRIBUTING.md)         | 开发者快速流程和常用检查             | 作为协作入口阅读                       |
 | [`../ARCHITECTURE.md`](../ARCHITECTURE.md)         | 全局技术架构和系统边界               | 跨模块、契约、数据或基础设施变化时读取 |
 | [`../DESIGN.md`](../DESIGN.md)                     | 全局视觉语言和交互约束               | UI、布局或公共组件变化时读取           |
@@ -52,6 +53,7 @@ Applies to: `docs/` 正式项目文档的分类、路由和维护边界
 ## 维护规则
 
 - 同一业务模块的 Business、Design 和 Technical 主文档使用相同英文文件名；没有独立内容的视角不创建占位文件。
+- 跨 Business、Design 和 Technical 的稳定术语统一维护在 `glossary.md`，不由单一文档类别拥有。
 - 页面、弹窗等组合视图按界面范围命名，并在 `Related` 中链接它组合的业务模块，不把页面自动提升为业务域。
 - 基础设施、SDK、网关和路线图按技术专题命名，并链接其服务的模块主文档。
 - 新增业务事实放入 `business/`，并更新 `business/README.md` 的领域地图。

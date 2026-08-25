@@ -7,6 +7,7 @@ Applies to: Wex 当前产品定义、业务域和 Codex 任务路由
 
 ## Related
 
+- Glossary: `docs/glossary.md`
 - Design: `DESIGN.md` and `docs/design/README.md`
 - Architecture: `ARCHITECTURE.md`
 - Technical: `docs/technical/README.md`
@@ -101,7 +102,6 @@ Project
 | 身份与访问 | 谁可以进入产品，登录后返回哪里，权限如何判断 | [身份与访问](identity-and-access.md)                |
 | Project    | 用户长期创作对象如何创建、展示和删除         | [Project](projects.md)                              |
 | 对话与运行 | 消息如何持久化，Agent 如何生成并流式返回回复 | [对话与 Agent Run](conversations-and-agent-runs.md) |
-| 通用语言   | Project、Conversation、Run 等词的唯一含义    | [业务术语表](glossary.md)                           |
 
 Project Workspace 是组合 Projects、Conversations、Agent Runs 和 Preview 占位的页面，不是独立业务域。Preview 当前没有真实产物、权威数据或生命周期，达到独立业务边界前不创建业务模块文档。
 
@@ -128,7 +128,7 @@ Project Workspace 是组合 Projects、Conversations、Agent Runs 和 Preview �
 
 ## 6. Codex 按任务选读
 
-每次产品改动先读本文和术语表，再根据影响范围选读；不要默认把所有技术方案都装入上下文。
+每次产品改动先读本文和 [`../glossary.md`](../glossary.md)，再根据影响范围选读；不要默认把所有技术方案都装入上下文。
 
 | 任务关键词或修改范围                      | 继续阅读                                                                                                            |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |

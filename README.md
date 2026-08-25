@@ -22,7 +22,7 @@ packages/
 
 ## 协作开发
 
-开始修改仓库前，请先阅读根目录的 [AGENTS.md](AGENTS.md)。涉及产品行为时，从 [业务知识库](docs/business/README.md) 了解产品、术语、能力状态和对应业务域；文档写法、模块边界、标准开发流程、风险分级与 Code Review 清单见 [协作开发与 Vibe Coding 质量守则](docs/collaboration-guide.md)。
+开始修改仓库前，请先阅读根目录的 [AGENTS.md](AGENTS.md)。涉及产品行为时，先通过 [统一术语表](docs/glossary.md) 对齐语言，再从 [业务知识库](docs/business/README.md) 了解产品、能力状态和对应业务域；文档写法、模块边界、标准开发流程、风险分级与 Code Review 清单见 [协作开发与 Vibe Coding 质量守则](docs/collaboration-guide.md)。
 
 ## 开发环境
 

@@ -1,18 +1,19 @@
-# Wex Agent 业务术语表
+# Wex Agent 统一术语表
 
 Status: Current
 Last verified: 2026-08-26
-Read when: 修改业务名词、模块名称、状态名称或跨文档术语
-Applies to: 产品、业务文档、代码和交互中的稳定术语
+Read when: 修改稳定术语、模块名称、状态名称，或开始涉及产品、设计和技术概念的任务
+Applies to: Business、Design、Technical、代码和交付说明中的稳定术语
 
 ## Related
 
 - Business index: `docs/business/README.md`
+- Documentation index: `docs/README.md`
 - Architecture: `ARCHITECTURE.md`
 
 ## Purpose
 
-本文统一产品、业务文档、代码和交互中的核心用词。同一个概念只使用一个主名称；新增相近名词前应先确认是否已经存在。
+本文是跨 Business、Design 和 Technical 的统一语言层，负责定义产品、页面、技术边界、代码和交付说明中的稳定用词。同一个概念只使用一个主名称；新增相近名词前应先确认是否已经存在。本文不定义具体业务规则、页面表现或技术实现，这些事实仍由对应类别和模块文档负责。
 
 | 术语                    | 唯一定义                                                           | 不代表什么                                            |
 | ----------------------- | ------------------------------------------------------------------ | ----------------------------------------------------- |

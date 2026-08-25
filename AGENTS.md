@@ -16,8 +16,8 @@ part of the agreed change.
 
 ## Business Context
 
-For any change that affects product behavior, read `docs/business/README.md` and
-`docs/business/glossary.md` before editing code. Then use the task-to-document routing
+For any change that affects product behavior, read `docs/glossary.md` and
+`docs/business/README.md` before editing code. Then use the task-to-document routing
 table in the business README to read the affected domain documents.
 
 `docs/README.md` explains the document categories. Read only the category relevant to
