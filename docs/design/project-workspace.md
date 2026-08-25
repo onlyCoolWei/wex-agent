@@ -1,25 +1,27 @@
-# Project Workspace and Preview 项目工作区与 Preview 业务规则
+# Project Workspace Design 项目工作区设计
 
 Status: Current
 Last verified: 2026-08-26
-Read when: 修改 Project 工作区、Chat/Preview 面板、移动端切换或 Preview 状态
-Applies to: `/projects/:projectId` 工作区的业务关系
+Read when: 修改 Project 工作区、Chat/Preview 面板、移动端切换或 Preview 呈现状态
+Applies to: `/projects/:projectId` 的组合页面、布局和交互
 
 ## Related
 
-- Design: `docs/design/workspace-layout.md`
+- Business: `docs/business/projects.md`
+- Business: `docs/business/conversations-and-agent-runs.md`
 - Technical: `docs/technical/architecture-roadmap.md`
 - Architecture: `ARCHITECTURE.md`
+- Design system: `DESIGN.md`
 
 ## Purpose
 
-本文定义用户进入 Project 后的核心工作界面，以及 Chat 与 Preview 之间的业务关系。布局细节见 [`../design/workspace-layout.md`](../design/workspace-layout.md)，全局边界见根目录 [`ARCHITECTURE.md`](../../ARCHITECTURE.md)。
+本文定义用户进入 Project 后，Projects、Conversations、Agent Runs 与 Preview 占位如何组合为一个工作界面。业务规则分别由 [`../business/projects.md`](../business/projects.md) 和 [`../business/conversations-and-agent-runs.md`](../business/conversations-and-agent-runs.md) 负责；本文只拥有页面结构、交互反馈和响应式表现。
 
-## 1. 业务目标
+## 1. 用户目标
 
-- 用户在一个稳定工作区中一边描述需求，一边查看网站产物。
+- 用户在一个稳定工作区中描述需求，并在真实 Preview 能力接入后查看网站产物。
 - Chat 负责表达意图、进度、错误和恢复操作。
-- Preview 负责展示真实可运行网站，而不是静态截图或未经执行的代码。
+- Preview 区域当前负责准确表达占位状态，不把静态示例或聊天回复伪装成真实网站。
 - 桌面端支持同时查看 Chat 与 Preview，移动端支持在两者间切换且不丢状态。
 
 ## 2. 当前页面结构
@@ -93,45 +95,23 @@ Mobile
 - 移动端只切换可见面板，不应卸载并丢失输入、消息连接或 Preview 状态。
 - 输入区处理底部安全区，页面根容器不产生横向滚动。
 
-## 5. 未来真实 Preview 的业务链路
+## 5. 能力表达边界
 
-以下是已确认的方向，不是当前能力：
+本文不定义 Sandbox、Artifact 或真实 Preview 的业务生命周期和技术方案。当前只能依据已有业务能力展示占位；接入真实 Preview 前，必须先在业务文档中定义权威状态和用户操作，再在技术文档中定义资源、权限和失败语义，最后由本文补充对应页面表现。
 
-```text
-User Message
-  -> Coding Agent Run
-  -> approved Sandbox Tools
-  -> Project files changed
-  -> build / dev server result
-  -> Preview URL ready
-  -> Preview 面板加载隔离 iframe
-```
-
-接入时必须先定义：
-
-- 一个 Project 对应一个还是多个 Sandbox Workspace。
-- Workspace 创建、休眠、恢复、过期和销毁时机。
-- 文件变更如何形成 Artifact、版本或可回滚记录。
-- Preview URL 的权限、有效期、网络隔离和 iframe sandbox 策略。
-- Agent Run 完成与 Preview ready 是否独立，构建失败如何呈现。
-- 用户刷新 Preview 是重载页面、重启服务还是重新构建。
-
-## 6. 业务不变量
+## 6. 设计约束
 
 - Project 工作区是 UI 容器，不是 Sandbox 已存在的证明。
 - Chat 回复完成不等于网站构建成功，Run 状态与 Preview 状态必须独立建模。
 - Preview ready 必须对应当前 Project 的真实、可访问、受隔离运行结果。
 - Project 切换时不能展示上一个 Project 的 Preview URL、日志或文件。
-- Sandbox 中的代码默认不可信，不能获得宿主机或长期密钥权限。
 - 移动端切换和桌面拖拽只改变呈现，不改变服务端业务状态。
 
 ## 7. 修改影响检查
 
 - UI 文案是否准确反映当前能力，没有把占位描述成真实生成。
 - 新 Preview 状态是否有明确触发者、权威来源、失败和恢复路径。
-- Agent、Sandbox、Build 与 Preview 的状态是否解耦但可以关联到同一 Project/Run。
 - Project 离开、删除、刷新和切换时是否正确清理连接与临时资源。
-- Preview URL 和 Tool 输出是否经过用户权限与 Project 所有权校验。
 - 桌面和窄屏是否都能完成相同核心任务。
 
 ## 8. 验收基线
@@ -140,7 +120,7 @@ User Message
 - 移动端可以切换面板且不丢失未发送输入和当前消息状态。
 - Chat 的加载、空、发送、重连和错误状态不导致布局跳变。
 - 当前占位 Preview 不会被误解为用户生成的网站。
-- 未来接入真实 Preview 后，只有资源成功就绪才进入 ready，失败提供明确恢复路径。
+- 引入真实 Preview 时，本文必须基于已经定义的业务状态补充 ready、失败和恢复表现。
 
 ## 9. 实现定位
 

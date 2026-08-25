@@ -1,4 +1,4 @@
-# Projects Project 创建、展示与删除技术方案
+# Projects Technical Implementation Project 技术实现
 
 Status: Current
 Last verified: 2026-08-26
@@ -8,7 +8,7 @@ Applies to: `apps/api/src/projects`、`apps/web/src/pages/workspace-page.tsx`、
 ## Related
 
 - Business: `docs/business/projects.md`
-- Design: `docs/design/workspace-layout.md`
+- Design: `docs/design/projects.md`
 - Architecture: `ARCHITECTURE.md`
 
 ## Purpose

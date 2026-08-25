@@ -1,4 +1,4 @@
-# Conversations and Agent Runs Phase 1 对话 Agent 技术方案
+# Conversations and Agent Runs Technical Implementation 对话与 Agent Run 技术实现
 
 Status: Current
 Last verified: 2026-08-26
@@ -8,7 +8,8 @@ Applies to: API、Worker、Contracts 和数据库中的持久化对话链路
 ## Related
 
 - Business: `docs/business/conversations-and-agent-runs.md`
-- Technical: `docs/technical/openai-agents-litellm.md`
+- Design: `docs/design/project-workspace.md`
+- Technical topic: `docs/technical/model-gateway.md`
 - Architecture: `ARCHITECTURE.md`
 
 ## Purpose
@@ -587,7 +588,7 @@ Phase 1 UI 至少覆盖：空会话、历史加载、发送中、排队中、流
 
 ## 17. 参考
 
-- 现有仓库方案：`docs/technical/openai-agents-litellm.md`
+- 模型网关与 Runtime：`docs/technical/model-gateway.md`
 - 现有总体技术栈与边界：`ARCHITECTURE.md`；阶段路线参考：`docs/technical/architecture-roadmap.md`
 - OpenAI Agents SDK 的运行、流式与状态管理边界：[Running agents](https://developers.openai.com/api/docs/guides/agents/running-agents)
 

@@ -7,13 +7,13 @@ Applies to: Workbench 中的 Project 生命周期和下级数据所有权
 
 ## Related
 
-- Design: `docs/design/workspace-layout.md`
-- Technical: `docs/technical/project-creation.md`
+- Design: `docs/design/projects.md`
+- Technical: `docs/technical/projects.md`
 - Architecture: `ARCHITECTURE.md`
 
 ## Purpose
 
-Project 是 Wex 中承载一个网站目标及其长期创作上下文的顶层对象。技术实现历史与 API 细节见 [`../technical/project-creation.md`](../technical/project-creation.md)。
+Project 是 Wex 中承载一个网站目标及其长期创作上下文的顶层对象。页面交互见 [`../design/projects.md`](../design/projects.md)，技术实现与 API 细节见 [`../technical/projects.md`](../technical/projects.md)。
 
 ## 1. 业务目标
 

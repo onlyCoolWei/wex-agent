@@ -15,7 +15,10 @@ Applies to: `apps/web` 的模块级设计和交互文档
 
 这里记录用户流程、页面状态和布局细节。设计文档必须服从根目录 [`DESIGN.md`](../../DESIGN.md) 和 `docs/business/` 中的业务规则，不能自行扩展产品范围。
 
-| 文档                                         | 主题                                   |
-| -------------------------------------------- | -------------------------------------- |
-| [`auth.md`](auth.md)                         | 登录、注册、OAuth、回调和退出          |
-| [`workspace-layout.md`](workspace-layout.md) | 首页、工作台、Project 双栏和响应式布局 |
+模块主文档与业务模块使用相同文件名；组合页面按其真实界面范围命名，可以同时引用多个业务模块。
+
+| 文档                                               | 类型         | 主题                                    |
+| -------------------------------------------------- | ------------ | --------------------------------------- |
+| [`identity-and-access.md`](identity-and-access.md) | 模块主文档   | 登录、注册、OAuth、回调和退出           |
+| [`projects.md`](projects.md)                       | 模块主文档   | 工作台 Project 列表、创建、打开和删除   |
+| [`project-workspace.md`](project-workspace.md)     | 组合页面文档 | Project 页面、Chat/Preview 和响应式布局 |

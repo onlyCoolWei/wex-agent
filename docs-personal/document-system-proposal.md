@@ -1,8 +1,8 @@
 # Wex 文档体系讨论草案
 
-> 状态：部分方案已确认，尚未成为仓库正式规范。
+> 状态：核心文档体系和当前模块边界已确认并落地，其余演进建议继续讨论。
 >
-> 本文位于个人知识库中，仅用于讨论文档体系。除非用户明确确认并要求执行，否则不应据此调整正式目录或约束 Coding Agent。
+> 本文位于个人知识库中，用于记录文档体系的讨论与演进理由。正式规则以 `AGENTS.md` 和 `docs/README.md` 为准，不应直接把本文当作项目规范。
 
 ## 1. 目标
 
@@ -25,12 +25,12 @@
 3. 根目录 `ARCHITECTURE.md` 是全仓库唯一的整体架构事实来源，约束所有模块技术文档。
 4. 根目录 `DESIGN.md` 是全仓库唯一的设计语言事实来源，约束所有模块设计文档。
 5. `docs/design/` 作为正式的设计文档目录，统一承载模块级页面设计和交互规范。
-6. 模块名称、目录名称和文档文件名使用英文领域名，并在业务、设计和技术文档中保持一致，通过双向链接形成闭环。
+6. 覆盖同一领域边界的业务、设计和技术主文档使用相同英文模块名和文件名，通过双向链接形成闭环；组合页面和横切技术专题按实际范围命名。
 7. 不在根目录和 `docs/` 中同时保留另一份整体架构或全局设计文档。
 8. 业务文档只描述当前已确认功能和规则，不维护未实现、可能实现或暂不支持的开放功能清单。
 9. 文档正文默认使用中文，以降低人类开发者的阅读成本；代码标识、路径、命令、API、数据库对象和第三方产品名保持原文。
 10. `AGENTS.md`、`README.md`、`CONTRIBUTING.md`、`ARCHITECTURE.md`、`DESIGN.md` 和 `docs/` 下的文档都可以使用中文正文，不因语言不同而降低其规范效力。
-11. 模块文档默认按紧密相关的业务能力合并，不要求每个模块都分别拥有业务、设计和技术文档；当子模块形成独立边界后再拆分。
+11. 模块文档默认按紧密相关的业务能力合并，不要求每个模块都分别拥有业务、设计和技术文档，也不创建空文档补齐三份结构；当子模块形成独立边界后再拆分。
 
 三类模块文档的具体格式和模板见 [`codex-document-format.md`](codex-document-format.md)。
 
@@ -51,23 +51,24 @@
     ├── business/               # 系统要做什么
     │   ├── README.md            # 产品概览、模块地图、核心用户链路
     │   ├── glossary.md          # 统一术语
-    │   ├── auth.md              # 登录与身份模块
-    │   ├── workspace.md         # 工作台模块
+    │   ├── identity-and-access.md # 身份、Session 与访问边界
     │   ├── projects.md          # Project 模块
-    │   └── conversations.md     # 对话与 Agent Run 模块
+    │   └── conversations-and-agent-runs.md # 当前阶段的对话执行链路
     │
     ├── design/                 # 模块页面与交互如何呈现
     │   ├── README.md            # 设计文档导航及 DESIGN.md 入口
-    │   ├── auth.md              # 登录页面设计与交互
-    │   ├── workspace.md         # 工作台设计
-    │   └── project-workspace.md # Project、Chat 与 Preview
+    │   ├── identity-and-access.md # 身份与访问模块设计
+    │   ├── projects.md          # Project 管理模块设计
+    │   └── project-workspace.md # 组合 Projects、Chat 与 Preview 的页面
     │
     ├── technical/              # 各模块如何实现
     │   ├── README.md            # 技术文档导航及 ARCHITECTURE.md 入口
-    │   ├── auth.md              # Supabase Auth 技术实现
+    │   ├── identity-and-access.md # Session、路由保护与 API 授权边界
     │   ├── projects.md          # Project 数据库与 API
-    │   ├── conversations.md     # Message、Run、SSE 与 Worker
-    │   └── model-gateway.md     # Agents SDK 与 LiteLLM
+    │   ├── conversations-and-agent-runs.md # Message、Run、SSE 与 Worker
+    │   ├── supabase.md          # 基础设施专题
+    │   ├── model-gateway.md     # Agents SDK 与 LiteLLM 专题
+    │   └── architecture-roadmap.md # 跨阶段技术路线专题
     │
     ├── adr/                    # 长期架构决策和取舍
     └── collaboration-guide.md  # 详细协作治理规范
@@ -124,19 +125,34 @@ supabase/migrations/
 
 三类文档必须保持事实所有权：设计文档不能自行增加业务能力，技术文档不能自行改变产品规则，业务文档不描述页面像素或框架实现。
 
-## 6. 模块名称对齐
+## 6. 模块名称与边界对齐
 
-业务、设计和技术文档应尽量使用相同的模块名称，建立稳定映射：
+模块先按独立用户目标和业务生命周期划分，再用权威数据、状态不变量和修改隔离度校验。页面、代码目录、数据库表、SDK 和基础设施不会因为单独存在就自动成为业务模块。
 
-| 模块         | 业务文档                                    | 设计文档                      | 技术文档                           |
-| ------------ | ------------------------------------------- | ----------------------------- | ---------------------------------- |
-| Auth         | `business/auth.md`                          | `design/auth.md`              | `technical/auth.md`                |
-| Workspace    | `business/workspace.md`                     | `design/workspace.md`         | `technical/workspace.md`（需要时） |
-| Project      | `business/projects.md`                      | `design/projects.md`          | `technical/projects.md`            |
-| Conversation | `business/conversations.md`                 | `design/conversations.md`     | `technical/conversations.md`       |
-| Preview      | `business/preview.md` 或归入 Project 工作区 | `design/project-workspace.md` | `technical/preview.md`             |
+判断一个概念是否值得成为独立模块时，依次检查：
 
-是否每个模块都必须在三个目录各有一篇文件仍需讨论。内容较少时，可以合并到相邻模块，避免产生只有几行内容的空文档。
+1. 是否有独立的用户目标和验收标准。
+2. 是否拥有自己的权威数据、聚合根或资源授权规则。
+3. 是否拥有独立生命周期、状态转换和不变量。
+4. 修改它时，是否通常不需要理解另一个模块的内部规则。
+5. 它是否是领域概念，而不是页面、代码目录或技术选型。
+
+前三项大多成立时，才建立新的业务模块。同一模块存在多个文档视角时，主文档必须使用相同文件名：
+
+| 模块                         | 业务文档                                   | 设计文档                        | 技术文档                                    |
+| ---------------------------- | ------------------------------------------ | ------------------------------- | ------------------------------------------- |
+| Identity and Access          | `business/identity-and-access.md`          | `design/identity-and-access.md` | `technical/identity-and-access.md`          |
+| Projects                     | `business/projects.md`                     | `design/projects.md`            | `technical/projects.md`                     |
+| Conversations and Agent Runs | `business/conversations-and-agent-runs.md` | 由 Project Workspace 组合呈现   | `technical/conversations-and-agent-runs.md` |
+
+以下名称不属于模块主文档：
+
+- `design/project-workspace.md` 是组合 Projects、Conversations、Agent Runs 和 Preview 占位的页面文档，可以引用多个业务模块。
+- `technical/supabase.md`、`technical/model-gateway.md` 和 `technical/architecture-roadmap.md` 是横切技术专题，按真实技术范围命名。
+- Preview 当前没有真实产物、权威数据和独立生命周期，不建立业务主文档；接入真实能力并形成边界后，再决定是否建立 `previews.md`。
+- Sandbox 是隔离执行的技术能力边界，不直接等同于用户可见业务模块。
+
+某个视角没有独立规则时可以不创建对应文件，不以几行内容的空文档补齐三份结构。
 
 ### 6.1 文档语言与命名规则
 
@@ -166,7 +182,8 @@ supabase/migrations/
 当前阶段的处理方式如下：
 
 - `Conversation` 与 `Agent Run` 继续合并在 `conversations-and-agent-runs.md`，因为它们共同组成当前的持久化对话执行链路。
-- `Preview` 暂时归入 Project 工作区，因为当前只有页面占位和状态描述，还没有独立产物、数据、权限或运行生命周期。
+- `Project Workspace` 只作为设计组合视图，不建立同名业务模块；它链接 Projects 与 Conversations and Agent Runs。
+- `Preview` 的占位呈现归入 Project Workspace 设计文档，因为当前还没有独立产物、数据、权限或运行生命周期。
 - 不要求每个模块都分别创建业务、设计和技术三份文档。某个视角没有独立规则时，可以合并到相邻模块或不单独创建文件。
 
 当子模块需要独立成文档时，原文档保留总览、边界和导航，新增文档承载详细规则；拆分过程中只建立链接，不复制大段正文。

@@ -8,6 +8,7 @@ Applies to: 首页、认证页、回调页和登录后入口
 ## Related
 
 - Business: `docs/business/identity-and-access.md`
+- Technical: `docs/technical/identity-and-access.md`
 - Architecture: `ARCHITECTURE.md`
 - Design system: `DESIGN.md`
 

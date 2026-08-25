@@ -8,6 +8,7 @@ Applies to: `packages/database`、API/Worker 服务端配置和 Web Auth 配置
 ## Related
 
 - Business: `docs/business/identity-and-access.md`
+- Technical module: `docs/technical/identity-and-access.md`
 - Architecture: `ARCHITECTURE.md`
 - ADR: `docs/adr/README.md`
 

@@ -1,5 +1,6 @@
 ### 2026-08-26
 
+- 🔧 按业务生命周期重整模块文档边界，统一 Identity、Projects、Conversations 主文档命名并将 Project Workspace 归为组合设计视图
 - 🔧 统一 `docs/` 下正式文档的元信息和 Purpose 结构，并扩展 `check:docs` 覆盖所有项目文档
 - 🎊 按文档体系方案落地根级 ARCHITECTURE.md、DESIGN.md、docs/design/ 和模块文档元信息，新增 check:docs 文档质量检查
 - ✨ 确认模块文档按业务边界渐进拆分，明确 Conversation/Agent Run 合并、Preview 归入 Project 的当前策略

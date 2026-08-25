@@ -96,13 +96,14 @@ Project
        -> Preview        [未实现]
 ```
 
-| 领域         | 负责的问题                                           | 必读文档                                            |
-| ------------ | ---------------------------------------------------- | --------------------------------------------------- |
-| 身份与访问   | 谁可以进入产品，登录后返回哪里，权限如何判断         | [身份与访问](identity-and-access.md)                |
-| Project      | 用户长期创作对象如何创建、展示和删除                 | [Project](projects.md)                              |
-| 对话与运行   | 消息如何持久化，Agent 如何生成并流式返回回复         | [对话与 Agent Run](conversations-and-agent-runs.md) |
-| 工作区与预览 | Project 页面如何组织对话与产物，Preview 当前代表什么 | [项目工作区与 Preview](workspace-and-preview.md)    |
-| 通用语言     | Project、Conversation、Run 等词的唯一含义            | [业务术语表](glossary.md)                           |
+| 领域       | 负责的问题                                   | 必读文档                                            |
+| ---------- | -------------------------------------------- | --------------------------------------------------- |
+| 身份与访问 | 谁可以进入产品，登录后返回哪里，权限如何判断 | [身份与访问](identity-and-access.md)                |
+| Project    | 用户长期创作对象如何创建、展示和删除         | [Project](projects.md)                              |
+| 对话与运行 | 消息如何持久化，Agent 如何生成并流式返回回复 | [对话与 Agent Run](conversations-and-agent-runs.md) |
+| 通用语言   | Project、Conversation、Run 等词的唯一含义    | [业务术语表](glossary.md)                           |
+
+Project Workspace 是组合 Projects、Conversations、Agent Runs 和 Preview 占位的页面，不是独立业务域。Preview 当前没有真实产物、权威数据或生命周期，达到独立业务边界前不创建业务模块文档。
 
 ## 5. 能力状态
 
@@ -129,14 +130,15 @@ Project
 
 每次产品改动先读本文和术语表，再根据影响范围选读；不要默认把所有技术方案都装入上下文。
 
-| 任务关键词或修改范围                      | 继续阅读                                                                                            |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| 登录、注册、Session、退出、redirect、权限 | `identity-and-access.md`、`../design/auth.md`、`../technical/supabase.md`                           |
-| 工作台、Project 创建/列表/删除/归档       | `projects.md`、`../technical/project-creation.md`                                                   |
-| Conversation、Message、聊天输入、SSE      | `conversations-and-agent-runs.md`、`../technical/chat-agent-phase-1.md`                             |
-| Worker、Agent、模型、事件、Run 状态       | `conversations-and-agent-runs.md`、`../technical/openai-agents-litellm.md`                          |
-| Project 双栏、移动端、Preview、Sandbox    | `workspace-and-preview.md`、`../design/workspace-layout.md`、`../technical/architecture-roadmap.md` |
-| 公共契约、数据库或跨应用边界              | 对应领域文档、根目录 `ARCHITECTURE.md`，并检查生产者和消费者                                        |
+| 任务关键词或修改范围                      | 继续阅读                                                                                                            |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| 登录、注册、Session、退出、redirect、权限 | `identity-and-access.md`、`../design/identity-and-access.md`、`../technical/identity-and-access.md`                 |
+| 工作台、Project 创建/列表/删除/归档       | `projects.md`、`../design/projects.md`、`../technical/projects.md`                                                  |
+| Conversation、Message、聊天输入、SSE      | `conversations-and-agent-runs.md`、`../design/project-workspace.md`、`../technical/conversations-and-agent-runs.md` |
+| Worker、Agent、模型、事件、Run 状态       | `conversations-and-agent-runs.md`、`../technical/conversations-and-agent-runs.md`、`../technical/model-gateway.md`  |
+| Project 双栏、移动端、Preview 占位        | `projects.md`、`conversations-and-agent-runs.md`、`../design/project-workspace.md`                                  |
+| Sandbox 或未来真实 Preview                | 当前业务能力状态、`../technical/architecture-roadmap.md`；形成独立生命周期后再建立对应模块文档                      |
+| 公共契约、数据库或跨应用边界              | 对应领域文档、根目录 `ARCHITECTURE.md`，并检查生产者和消费者                                                        |
 
 ## 7. 需求判断顺序
 

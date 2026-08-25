@@ -7,13 +7,13 @@ Applies to: Project 内的持久化对话和后台执行链路
 
 ## Related
 
-- Design: `docs/design/workspace-layout.md`
-- Technical: `docs/technical/chat-agent-phase-1.md`
+- Design: `docs/design/project-workspace.md`
+- Technical: `docs/technical/conversations-and-agent-runs.md`
 - Architecture: `ARCHITECTURE.md`
 
 ## Purpose
 
-本文定义 Project 内的 Conversation、Message、Agent Run 和 Agent Event 如何协作。详细技术方案见 [`../technical/chat-agent-phase-1.md`](../technical/chat-agent-phase-1.md) 与 [`../technical/openai-agents-litellm.md`](../technical/openai-agents-litellm.md)。
+本文定义 Project 内的 Conversation、Message、Agent Run 和 Agent Event 如何协作。当前技术链路见 [`../technical/conversations-and-agent-runs.md`](../technical/conversations-and-agent-runs.md)，模型网关与 Runtime 专题见 [`../technical/model-gateway.md`](../technical/model-gateway.md)。
 
 ## 1. 业务目标
 

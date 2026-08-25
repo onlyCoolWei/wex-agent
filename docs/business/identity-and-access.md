@@ -7,13 +7,13 @@ Applies to: Web 身份入口和受保护产品页面
 
 ## Related
 
-- Design: `docs/design/auth.md`
-- Technical: `docs/technical/supabase.md`
+- Design: `docs/design/identity-and-access.md`
+- Technical: `docs/technical/identity-and-access.md`
 - Architecture: `ARCHITECTURE.md`
 
 ## Purpose
 
-本文定义 Wex 的个人身份、登录流程和访问边界。详细页面文案与状态见 [`../design/auth.md`](../design/auth.md)，Supabase 配置见 [`../technical/supabase.md`](../technical/supabase.md)。
+本文定义 Wex 的个人身份、登录流程和访问边界。详细页面文案与状态见 [`../design/identity-and-access.md`](../design/identity-and-access.md)，技术边界见 [`../technical/identity-and-access.md`](../technical/identity-and-access.md)。
 
 ## 1. 业务目标
 
