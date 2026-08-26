@@ -31,7 +31,7 @@ Applies to: `apps/web` 的模块级设计和交互文档
 | [Projects](projects.md)                       | 模块主文档   | 修改工作台 Project 列表、创建、打开、删除或页面状态 |
 | [Project Workspace](project-workspace.md)     | 组合页面文档 | 修改 Project 页面、Chat/Preview、分隔条或移动端切换 |
 
-模块主文档与业务模块使用相同文件名。组合页面按真实界面范围命名，并在 Related 中链接所有相关业务模块。
+模块主文档与业务模块使用相同文件名和一级标题。组合页面按真实界面范围命名，并在 Related 中链接所有相关业务模块。
 
 ## Load Order
 

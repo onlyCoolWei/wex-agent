@@ -1,4 +1,4 @@
-# Projects Technical Implementation
+# Projects
 
 Status: Current
 Last verified: 2026-08-26

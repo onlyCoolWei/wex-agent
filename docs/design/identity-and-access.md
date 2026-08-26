@@ -1,4 +1,4 @@
-# Identity and Access Design
+# Identity and Access
 
 Status: Current
 Last verified: 2026-08-26

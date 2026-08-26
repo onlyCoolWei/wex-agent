@@ -52,7 +52,7 @@ Applies to: `docs/` 正式项目文档的分类、路由和维护边界
 
 ## 维护规则
 
-- 同一业务模块的 Business、Design 和 Technical 主文档使用相同英文文件名；没有独立内容的视角不创建占位文件。
+- 同一业务模块的 Business、Design 和 Technical 主文档使用相同英文文件名和一级标题；文档类别由目录和正文职责表达，不追加 `Design`、`Technical Implementation` 等名称后缀。没有独立内容的视角不创建占位文件。
 - 跨 Business、Design 和 Technical 的稳定术语统一维护在 `glossary.md`，不由单一文档类别拥有。
 - 页面、弹窗等组合视图按界面范围命名，并在 `Related` 中链接它组合的业务模块，不把页面自动提升为业务域。
 - 基础设施、SDK、网关和路线图按技术专题命名，并链接其服务的模块主文档。

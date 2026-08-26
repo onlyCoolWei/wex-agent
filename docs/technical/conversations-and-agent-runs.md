@@ -1,4 +1,4 @@
-# Conversations and Agent Runs Technical Implementation
+# Conversations and Agent Runs
 
 Status: Current
 Last verified: 2026-08-26

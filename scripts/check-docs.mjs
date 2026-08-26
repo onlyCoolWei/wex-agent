@@ -68,6 +68,26 @@ if (existsSync(join(root, "docs", "design"))) {
   }
 }
 
+const businessDirectory = join(root, "docs", "business");
+for (const file of readdirSync(businessDirectory)) {
+  if (file === "README.md" || extname(file) !== ".md") continue;
+
+  const businessSource = readFileSync(join(businessDirectory, file), "utf8");
+  const businessTitle = businessSource.match(/^# (.+)$/m)?.[1];
+  for (const category of ["design", "technical"]) {
+    const counterpart = join(root, "docs", category, file);
+    if (!existsSync(counterpart)) continue;
+
+    const counterpartSource = readFileSync(counterpart, "utf8");
+    const counterpartTitle = counterpartSource.match(/^# (.+)$/m)?.[1];
+    if (counterpartTitle !== businessTitle) {
+      errors.push(
+        `docs/${category}/${file}: title must match docs/business/${file} (${businessTitle})`,
+      );
+    }
+  }
+}
+
 if (errors.length > 0) {
   console.error(errors.map((error) => `- ${error}`).join("\n"));
   process.exitCode = 1;

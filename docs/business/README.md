@@ -98,11 +98,11 @@ Project 工作区是组合 Projects、Conversations、Agent Runs 和 Preview 占
 
 ## Domain Map
 
-| Domain     | Owns                                       | Read                                                            |
-| ---------- | ------------------------------------------ | --------------------------------------------------------------- |
-| 身份与访问 | 身份流程、Session、redirect 和数据访问边界 | [Identity and Access](identity-and-access.md)                   |
-| Projects   | Project 创建、展示、打开、删除和所有权根   | [Projects](projects.md)                                         |
-| 对话与运行 | Message 持久化、Agent Run 和流式事件       | [Conversations and Agent Runs](conversations-and-agent-runs.md) |
+| Domain                       | Owns                                       | Read                                                            |
+| ---------------------------- | ------------------------------------------ | --------------------------------------------------------------- |
+| Identity and Access          | 身份流程、Session、redirect 和数据访问边界 | [Identity and Access](identity-and-access.md)                   |
+| Projects                     | Project 创建、展示、打开、删除和所有权根   | [Projects](projects.md)                                         |
+| Conversations and Agent Runs | Message 持久化、Agent Run 和流式事件       | [Conversations and Agent Runs](conversations-and-agent-runs.md) |
 
 只有形成独立用户目标、权威数据和生命周期的概念才建立业务模块。页面组合视图和没有真实产物的 Preview 占位不单独建立业务域。
 
