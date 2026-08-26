@@ -1,5 +1,8 @@
 ### 2026-08-26
 
+- 🔧 按 Codex 优先格式统一技术文档，明确当前实现、架构边界、稳定契约、已知缺口、变更映射与验证入口
+- 🔧 按 Codex 优先格式统一设计模块文档，收敛页面布局、状态、交互、响应式、可访问性与视觉验收基线
+- 🔧 按 Codex 优先格式统一业务文档结构，补全当前能力、规则、不变量、边界场景、影响映射与验收清单
 - 🔧 将统一术语表移至 `docs/glossary.md`，明确其跨 Business、Design 和 Technical 的语言层职责
 - 🔧 按业务生命周期重整模块文档边界，统一 Identity、Projects、Conversations 主文档命名并将 Project Workspace 归为组合设计视图
 - 🔧 统一 `docs/` 下正式文档的元信息和 Purpose 结构，并扩展 `check:docs` 覆盖所有项目文档

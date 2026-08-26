@@ -1,4 +1,4 @@
-# Wex Agent 业务知识库
+# Wex Agent Business
 
 Status: Current
 Last verified: 2026-08-26
@@ -8,157 +8,155 @@ Applies to: Wex 当前产品定义、业务域和 Codex 任务路由
 ## Related
 
 - Glossary: `docs/glossary.md`
+- Documentation: `docs/README.md`
 - Design: `DESIGN.md` and `docs/design/README.md`
-- Architecture: `ARCHITECTURE.md`
 - Technical: `docs/technical/README.md`
+- Architecture: `ARCHITECTURE.md`
 
 ## Purpose
 
-本文是 Wex Agent 的业务入口，也是 Coding Agent 修改产品行为前的必读文档。它回答产品服务谁、当前已经提供什么、核心对象如何关联，以及不同需求还需要阅读哪些领域文档。
+本文是 Wex Agent 的业务入口。它用于确定产品服务谁、当前提供什么、核心对象如何关联，以及一次修改还需要读取哪些领域文档。
 
-> 最后校准日期：2026-08-25。业务文档描述当前产品规则；技术方案描述实现方式或演进计划。文档与代码不一致时，不要静默选择一方，应先确认差异属于实现缺陷、文档过期还是尚未完成的规划。
+业务文档描述当前产品事实、已经确认的规则和必要边界，不把目标架构或预留类型描述成可用能力。文档与代码不一致时，必须先确认差异属于实现缺陷、文档过期还是已批准但尚未交付的变更。
 
-## 1. 产品定义
+## Product
 
-Wex 是一个以对话为主要入口的 AI 网站创作工作台。用户创建 Project，在项目工作区中与 Wex 对话，并逐步获得可预览、可继续迭代的网站。
+Wex 是一个以对话为主要入口的 AI 网站创作工作台。用户创建 Project，在 Project 工作区中与 Wex 对话，并保存可持续迭代的创作上下文。
 
-当前产品处于“持久化对话闭环”阶段：账号访问、Project 管理、持久化消息、Agent Run 和流式回复已经打通；代码生成、Sandbox Workspace、文件操作和真实站点 Preview 尚未接入。因此当前的 Wex Agent 是无工具的对话助手，不能声称已经修改文件或生成可运行网站。
+当前产品已经打通账号访问、Project 管理、持久化消息、Agent Run 和流式文本回复。Wex Agent 当前没有 Tool、文件或 Sandbox 能力，因此不得声称已经修改文件、生成可运行网站或更新真实 Preview。
 
-### 目标用户
+## Users
 
-- 希望通过自然语言创建网站的个人创作者。
-- 需要持续迭代同一个网站 Project，而不是只获得一次性回答的用户。
-- 当前阶段只支持个人使用语义，尚无团队、成员角色和共享协作能力。
+| User       | Goal                     | Current access                                        |
+| ---------- | ------------------------ | ----------------------------------------------------- |
+| 访客       | 了解产品并建立身份       | 浏览首页，进入认证流程                                |
+| 已登录用户 | 围绕一个网站目标持续创作 | 进入工作台和 Project 页面，管理 Project 并与 Wex 对话 |
 
-### 核心价值
+当前只定义个人使用语义。团队、成员和角色不属于现有权限模型。
 
-- 用 Project 保存长期创作上下文。
-- 用 Conversation 和 Message 保存用户与 Agent 的连续交流。
-- 用 Agent Run 记录每一次模型执行，使回复可以流式展示、失败可解释、刷新可恢复。
-- 未来通过 Sandbox 和 Preview 将对话结果连接到真实网站产物。
+## Capabilities
 
-### 当前非目标
+- 使用 Email/Password 或 Google 建立和恢复 Session。
+- 在 Web 路由层保护工作台和 Project 页面。
+- 创建、查看、打开和永久删除 Project。
+- 在 Project 内保存多轮 Conversation 和 Message。
+- 为每次用户发送创建持久化 Agent Run。
+- 通过 SSE 增量展示 Wex 的文本回复。
+- 刷新后从持久化 Message 和 active Run 恢复对话状态。
 
-- 团队空间、Project 成员和细粒度角色权限。
-- 模板市场、发布、域名、计费和用量套餐。
-- 文件树、代码编辑器、版本历史和可恢复 Checkpoint。
-- Tool 审批、Run Resume/Retry、多个并行 Conversation 的完整 UI。
-
-## 2. 角色与系统参与者
-
-| 参与者       | 定义                                         | 当前能力                                         |
-| ------------ | -------------------------------------------- | ------------------------------------------------ |
-| 访客         | 没有有效 Supabase Session 的访问者           | 浏览首页，进入认证流程                           |
-| 已登录用户   | 浏览器中存在有效 Supabase Session 的个人用户 | 进入工作台和 Project 页面，使用当前业务功能      |
-| Wex Agent    | 面向用户输出回复的 AI 助手                   | 理解对话上下文并生成文本；无 Tool 和文件能力     |
-| API Server   | 对外业务入口                                 | Project、Conversation、Message、SSE 的校验与编排 |
-| Agent Worker | 后台执行者                                   | 领取排队中的 Run，调用模型并持久化事件与结果     |
-| LiteLLM      | 统一模型网关                                 | 根据稳定模型别名路由请求                         |
-| Supabase     | 认证和业务数据基础设施                       | Auth、PostgreSQL、业务函数和持久化               |
-
-重要限制：Web 已限制未登录用户访问业务页面，但 API 尚未验证用户 Session，也未按 `owner_id` 隔离数据。这是安全闭环缺口，不能把前端路由保护当成服务端授权。
-
-## 3. 核心业务链路
-
-```text
-访客
-  -> 登录或首次注册
-  -> 工作台
-  -> 创建或打开 Project
-  -> 自动取得最近的 Conversation；没有则创建
-  -> 发送 Message
-  -> 创建 queued Agent Run 与 assistant 占位消息
-  -> Worker 领取 Run 并调用 Wex Agent
-  -> Agent Event 持久化
-  -> Web 通过 SSE 展示流式回复
-  -> Run completed / failed / cancelled
-
-Project 工作区右侧 Preview
-  -> 当前仅为状态占位
-  -> 尚未连接 Agent 输出、代码文件或 Sandbox
-```
-
-刷新页面时，Message 和活跃 Run 以服务端持久化数据为准；浏览器中的乐观消息和连接状态都不是业务权威状态。
-
-## 4. 领域与数据关系
+## Entities
 
 ```text
 User
   -> Project
        -> Conversation
             -> Message (user)
-            -> AgentRun
+            -> Agent Run
                  -> Message (assistant)
-                 -> AgentEvent[]
-
-Project
-  -> Sandbox Workspace   [未实现]
-       -> Files          [未实现]
-       -> Preview        [未实现]
+                 -> Agent Event[]
 ```
 
-| 领域       | 负责的问题                                   | 必读文档                                            |
-| ---------- | -------------------------------------------- | --------------------------------------------------- |
-| 身份与访问 | 谁可以进入产品，登录后返回哪里，权限如何判断 | [身份与访问](identity-and-access.md)                |
-| Project    | 用户长期创作对象如何创建、展示和删除         | [Project](projects.md)                              |
-| 对话与运行 | 消息如何持久化，Agent 如何生成并流式返回回复 | [对话与 Agent Run](conversations-and-agent-runs.md) |
+| Entity       | Meaning                                | Authority     |
+| ------------ | -------------------------------------- | ------------- |
+| User         | 通过 Supabase Auth 建立身份的个人用户  | Supabase Auth |
+| Project      | 长期网站创作目标及下级数据的所有权根   | PostgreSQL    |
+| Conversation | Project 内的有序对话容器               | PostgreSQL    |
+| Message      | 用户输入或 Wex 回复的持久化内容        | PostgreSQL    |
+| Agent Run    | 一次回复生成的持久化执行记录           | PostgreSQL    |
+| Agent Event  | Run 内按 sequence 排序的状态或内容事件 | PostgreSQL    |
 
-Project Workspace 是组合 Projects、Conversations、Agent Runs 和 Preview 占位的页面，不是独立业务域。Preview 当前没有真实产物、权威数据或生命周期，达到独立业务边界前不创建业务模块文档。
+Project 工作区是组合 Projects、Conversations、Agent Runs 和 Preview 占位的页面，不是独立业务域。Preview 当前没有真实产物、权威数据或生命周期。
 
-## 5. 能力状态
+## Participants
 
-使用以下标记阅读所有业务文档：
+| Participant  | Responsibility                            | Must not be treated as                           |
+| ------------ | ----------------------------------------- | ------------------------------------------------ |
+| Web          | Session 恢复、页面交互和 SSE 展示         | 服务端授权或业务权威状态                         |
+| API Server   | 业务校验、编排、持久化和对外 REST/SSE     | 长时间 Agent 执行环境                            |
+| Agent Worker | 领取并执行 Run，持久化 Agent Event 和结果 | 对外业务 API                                     |
+| Wex Agent    | 根据持久化对话上下文生成文本              | 已具备文件、Shell 或 Preview 能力的 Coding Agent |
+| LiteLLM      | 按稳定模型别名路由模型请求                | 业务状态来源                                     |
+| Supabase     | Auth、PostgreSQL 和业务函数               | 前端路由保护的替代品                             |
 
-- **已实现**：当前代码与数据结构已提供，修改时必须考虑回归和兼容。
-- **已定义未闭环**：产品规则已明确，但实现只完成一部分；不能描述为已具备。
-- **暂不支持**：不属于当前行为，除非需求明确要求，否则不要顺手实现。
+## Main Flow
 
-| 能力                           | 状态         | 说明                                                   |
+```text
+访客
+  -> 登录或首次注册
+  -> 工作台
+  -> 创建或打开 Project
+  -> 取得最近的 Conversation；没有则创建
+  -> 发送 User Message
+  -> 原子创建 Assistant Message 与 queued Agent Run
+  -> Worker 领取 Run 并调用 Wex Agent
+  -> Agent Event 持久化
+  -> Web 通过 SSE 展示流式回复
+  -> Run 与 Assistant Message 进入一致终态
+```
+
+刷新页面时，Message 和 active Run 以服务端持久化数据为准；浏览器乐观消息和 SSE 连接状态都不是业务权威状态。
+
+## Domain Map
+
+| Domain     | Owns                                       | Read                                                            |
+| ---------- | ------------------------------------------ | --------------------------------------------------------------- |
+| 身份与访问 | 身份流程、Session、redirect 和数据访问边界 | [Identity and Access](identity-and-access.md)                   |
+| Projects   | Project 创建、展示、打开、删除和所有权根   | [Projects](projects.md)                                         |
+| 对话与运行 | Message 持久化、Agent Run 和流式事件       | [Conversations and Agent Runs](conversations-and-agent-runs.md) |
+
+只有形成独立用户目标、权威数据和生命周期的概念才建立业务模块。页面组合视图和没有真实产物的 Preview 占位不单独建立业务域。
+
+## Capability Status
+
+以下状态只用于区分当前事实，不作为未来功能清单：
+
+- **已实现**：代码与数据结构已经提供，修改时必须考虑回归和兼容。
+- **已定义未闭环**：业务规则已经确认，但当前实现不完整，不得描述为已具备。
+- **暂不支持**：为理解当前规则所必需的能力边界，不得从预留类型推断为可用功能。
+
+| Capability                     | Status       | Current fact                                           |
 | ------------------------------ | ------------ | ------------------------------------------------------ |
 | Email/Password 与 Google 登录  | 已实现       | 使用 Supabase Auth，首次邮箱注册需要确认链接           |
 | Web 受保护路由                 | 已实现       | `/workspace` 和 `/projects/:id` 要求浏览器存在 Session |
-| API 鉴权与数据所有权           | 已定义未闭环 | API 尚未校验 Bearer Token，`owner_id` 仍可为空         |
+| API 鉴权与数据所有权           | 已定义未闭环 | API 尚未验证 Bearer Token，`owner_id` 仍可为空         |
 | Project 创建、列表、打开、删除 | 已实现       | 删除为不可恢复的物理删除，并级联删除对话数据           |
-| Project 归档                   | 暂不支持     | 数据状态预留 `archived`，没有业务操作入口              |
-| 持久化多轮对话                 | 已实现       | UI 当前只使用最近一个 Conversation                     |
-| Agent 流式文本回复             | 已实现       | 固定 `main-chat`、`gpt-5.6-luna`、无 Tool              |
-| 取消、重试、恢复、审批         | 暂不支持     | 类型或 Runtime 可能有预留，但不是可用产品能力          |
-| 代码生成与文件修改             | 暂不支持     | Agent 没有文件系统或 Shell Tool                        |
-| Sandbox 与真实 Preview         | 暂不支持     | 右侧面板是占位 UI，不代表已生成站点                    |
+| 持久化多轮对话                 | 已实现       | Web 当前只使用最近活跃的 Conversation                  |
+| Agent 流式文本回复             | 已实现       | 使用固定 `main-chat`、`gpt-5.6-luna`，且没有 Tool      |
+| Project 归档                   | 暂不支持     | 数据状态有预留，但没有业务操作入口                     |
+| Run 控制                       | 暂不支持     | 取消、重试、恢复和审批没有产品闭环                     |
+| 网站产物                       | 暂不支持     | 代码生成、Sandbox 和真实 Preview 尚未接入              |
 
-## 6. Codex 按任务选读
+## Task Routing
 
-每次产品改动先读本文和 [`../glossary.md`](../glossary.md)，再根据影响范围选读；不要默认把所有技术方案都装入上下文。
+每次产品改动先读本文和 [`../glossary.md`](../glossary.md)，再根据影响范围选读。
 
-| 任务关键词或修改范围                      | 继续阅读                                                                                                            |
+| Task keywords or scope                    | Continue reading                                                                                                    |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | 登录、注册、Session、退出、redirect、权限 | `identity-and-access.md`、`../design/identity-and-access.md`、`../technical/identity-and-access.md`                 |
-| 工作台、Project 创建/列表/删除/归档       | `projects.md`、`../design/projects.md`、`../technical/projects.md`                                                  |
+| 工作台、Project 创建、列表、删除、归档    | `projects.md`、`../design/projects.md`、`../technical/projects.md`                                                  |
 | Conversation、Message、聊天输入、SSE      | `conversations-and-agent-runs.md`、`../design/project-workspace.md`、`../technical/conversations-and-agent-runs.md` |
 | Worker、Agent、模型、事件、Run 状态       | `conversations-and-agent-runs.md`、`../technical/conversations-and-agent-runs.md`、`../technical/model-gateway.md`  |
 | Project 双栏、移动端、Preview 占位        | `projects.md`、`conversations-and-agent-runs.md`、`../design/project-workspace.md`                                  |
-| Sandbox 或未来真实 Preview                | 当前业务能力状态、`../technical/architecture-roadmap.md`；形成独立生命周期后再建立对应模块文档                      |
-| 公共契约、数据库或跨应用边界              | 对应领域文档、根目录 `ARCHITECTURE.md`，并检查生产者和消费者                                                        |
+| Sandbox 或真实 Preview                    | 本文的能力边界、`../technical/architecture-roadmap.md`                                                              |
+| 公共契约、数据库或跨应用边界              | 对应领域文档和根目录 `ARCHITECTURE.md`                                                                              |
 
-## 7. 需求判断顺序
+## Change Checklist
 
-Codex 开始实现前，应按顺序回答：
+开始实现前必须确认：
 
-1. 这次改变哪个用户结果？
-2. 涉及哪些业务对象，其权威状态存在哪里？
-3. 哪些业务不变量不能被破坏？
-4. 当前能力是已实现、未闭环还是暂不支持？
-5. 是否改变权限、数据、跨应用契约或失败语义？
-6. 业务文档、交互文档、技术方案和代码是否一致？
-7. 验收标准如何覆盖成功、失败、空状态和重复操作？
+- [ ] 这次改变的用户结果和涉及的业务对象已经明确
+- [ ] 每个业务对象的权威状态来源已经明确
+- [ ] 相关 Rules、Invariants 和 Edge Cases 已经检查
+- [ ] 当前能力状态没有被预留类型或目标架构夸大
+- [ ] 权限、数据、契约和失败语义的影响已经识别
+- [ ] Business、Design、Technical 和代码之间没有未解释冲突
+- [ ] 验收标准覆盖成功、失败、空状态和重复操作
 
-如果问题无法从业务文档和代码中确定，并且不同答案会改变数据模型、权限或用户流程，应向需求方澄清，而不是自行补全产品规则。
+## Maintenance
 
-## 8. 文档维护规则
-
-- 本目录只描述当前业务事实、明确的不变量和已经确认的产品边界。
-- 未来设想必须标为“已定义未闭环”或“暂不支持”，不能与已实现能力混写。
-- 交互细节可以放在专门文档，技术选型和实施步骤放在技术方案；业务域文档只保留理解行为所需的信息。
-- 业务行为变化时先更新对应领域文档，再同步契约、数据、实现和验收。
-- 新增业务域时，同时更新本文的领域表、能力状态和 Codex 选读表。
-- 已过期的技术方案不要继续扩写为业务事实；保留历史价值时应在开头标注状态并链接当前业务文档。
+- 本目录只描述当前业务事实、明确不变量和理解当前行为所需的能力边界。
+- 业务行为变化时，必须先更新对应领域文档，再同步契约、数据、实现和验收。
+- 新业务域必须同时更新 Domain Map、Capability Status 和 Task Routing。
+- 设计细节归入 `docs/design/`，实现链路和已确认的技术缺口归入 `docs/technical/`。
+- 已批准但尚未交付的需求应进入需求或计划文档，完成后再合入当前业务文档。
+- Related 只链接真实存在且与当前模块相关的事实来源。

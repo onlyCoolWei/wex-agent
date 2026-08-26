@@ -1,559 +1,228 @@
-# Coding Agent Architecture Roadmap 技术栈与架构路线
+# Coding Agent Architecture Roadmap
 
 Status: Reference
 Last verified: 2026-08-26
-Read when: 评估未来 Runtime、Sandbox、队列、工具或发布能力的技术路线
-Applies to: 目标架构和分阶段方案，不替代根目录当前架构事实
+Read when: 评估 Runtime、Sandbox、队列、Tool、审批、恢复或发布能力的演进方向
+Applies to: 未交付能力的目标边界和决策顺序；不替代当前架构与业务事实
 
 ## Related
 
-- Current architecture: `ARCHITECTURE.md`
+- Business: `docs/business/README.md`
 - Technical index: `docs/technical/README.md`
-- Business context: `docs/business/README.md`
+- Model gateway: `docs/technical/model-gateway.md`
+- Current architecture: `ARCHITECTURE.md`
+- ADR: `docs/adr/README.md`
 
 ## Purpose
 
-> 文档定位：Wex Coding Agent 的目标架构与分阶段技术路线，不代表所有能力均已实现。当前产品事实和能力状态见 [`../business/README.md`](../business/README.md)。
+本文为 Wex 从持久化文本对话演进为 Coding Agent 提供技术参考。它描述目标边界、依赖顺序和决策门槛，不表示列出的组件或能力已经实现。
 
-本文面向类似 Lovable、Claude Code 或 Codex 的 Coding Agent 产品，给出一套适合 TypeScript 团队的技术选型与系统边界。
+当前事实必须以根目录 `ARCHITECTURE.md`、模块 Technical 文档、Business 能力状态和代码为准。路线图中的长期且难以逆转的选型在实施前应单独形成 ADR。
 
-核心目标不是搭建一个普通的 CRUD 应用，而是构建一个具备长时间运行、实时事件、任务恢复、人工审批和隔离执行能力的 **Agent Runtime Server**。
+## Current Baseline
 
-## 技术栈总览
+当前已经具备：
 
-| 层级              | 推荐技术                           | 主要职责                                  |
-| ----------------- | ---------------------------------- | ----------------------------------------- |
-| Web               | React、Vite、TypeScript            | Chat、项目管理、文件树、运行状态、Preview |
-| UI                | Tailwind CSS、shadcn/ui            | 组件体系与交互界面                        |
-| API Server        | NestJS                             | API、认证、业务编排、权限、事件订阅       |
-| Agent Runtime     | `@openai/agents` + 自研封装        | Agent Loop、Tool、Context、Runner         |
-| Background Worker | NestJS Worker，后续可接 BullMQ     | 执行长时间 Agent Run 与恢复任务           |
-| Model Gateway     | LiteLLM                            | 模型路由、兼容层、用量与策略控制          |
-| Database          | Supabase PostgreSQL                | 项目、会话、运行状态、事件与审计数据      |
-| ORM               | Drizzle ORM                        | Schema、Migration 与类型安全的数据访问    |
-| Sandbox           | Docker，预留 Daytona / E2B         | 隔离 Workspace、Shell、Build、Preview     |
-| 实时通信          | REST + SSE                         | 命令提交、状态查询与单向事件流            |
-| Monorepo          | pnpm workspace + Turborepo（可选） | 应用与共享 Package 管理                   |
+- React + Vite Web、NestJS API 和独立 NestJS Worker 进程。
+- Supabase PostgreSQL 中的 Project、Conversation、Message、Agent Run 和 Agent Event。
+- REST 命令/查询和基于持久化 sequence 的 SSE。
+- OpenAI Agents SDK Runtime、LiteLLM 单一网关和逻辑模型别名。
+- 数据库 `SKIP LOCKED` 领取、固定 3 分钟 lease 和超时 Run 清理。
+- `packages/sandbox` 接口边界，但没有进入产品运行链路。
 
-## 架构原则
+当前不应被视为已具备：
 
-### 1. Agent Run 是核心业务实体
+- API 多用户授权闭环。
+- Tool、文件、Shell、Build 或真实 Preview。
+- 持久化取消、恢复、重试、审批或 Checkpoint。
+- BullMQ/Redis、lease 续约、独立 Attempt 历史或生产级多 Worker 恢复。
+- Artifact 存储、发布、团队协作或评测流水线。
 
-系统不应只保存 Chat Message，还需要记录每一次 Agent 执行及其完整生命周期。Interrupt、Resume、Retry、Replay、Eval 和 Debug 都应围绕 `AgentRun` 展开。
+## Target Principles
 
-### 2. API 与长任务执行分离
+### Persistent Run Authority
 
-NestJS API Server 负责接收命令、鉴权和查询状态；Worker 负责执行可能持续数分钟甚至更久的 Agent 任务。用户关闭浏览器后，任务仍可继续执行。
+Agent Run 和 Event 必须保存在 PostgreSQL。队列、Worker 内存和 SSE 都不是业务权威来源。
 
-### 3. Runtime 与框架解耦
+### API and Worker Separation
 
-业务模块不应直接依赖 OpenAI Agents SDK 的 `Runner`。SDK 应封装在独立 Runtime 接口之后，避免未来替换或扩展 Runtime 时影响 Controller 和业务逻辑。
+API 负责身份、权限、命令、查询和订阅；Worker 负责可能持续数分钟的 Agent 执行。浏览器关闭不得终止服务端工作。
 
-### 4. Sandbox 与 Runtime 解耦
+### Runtime Isolation
 
-Agent 通过统一的 Sandbox 接口访问文件、Shell、构建和 Preview，不直接依赖 Docker、Daytona 或 E2B 的具体 API。
+业务模块只依赖稳定 `AgentRuntime`，不得直接依赖 Agents SDK `Runner`、Provider 原始事件或 Tool 实现。
 
-### 5. 事件先持久化，再实时推送
+### Sandbox Isolation
 
-SSE 是事件的传输方式，不应成为唯一事件来源。运行事件应先写入持久化存储，再推送给前端，以支持断线重连、历史回放和调试。
+Runtime 只依赖 `packages/sandbox` 接口。调用方不得依赖 Docker、Daytona、E2B 或其他供应商细节。
 
-## 前端
+### Persist Before Publish
 
-### 技术选型
+业务事件必须先持久化，再通过 SSE 推送。断线重连必须从持久化 sequence 补读。
 
-```text
-React
-Vite
-TypeScript
-Tailwind CSS
-shadcn/ui
-```
+### Explicit Capability State
 
-### 主要功能
+预留接口、状态或目录不代表能力可用。只有 Contracts、持久化、Runtime、API、UI、权限和失败路径形成闭环后，能力才能标记为已实现。
 
-- Chat 与消息流
-- Project 管理
-- File Tree 与文件查看
-- Agent Run 状态
-- Tool Call 与实时日志
-- Approval 请求
-- Build / Test 结果
-- Preview
-- Interrupt、Resume 与 Retry
-
-前端只维护展示所需的临时状态。Agent Run 的权威状态应保存在服务端，页面刷新或重新打开后能够从服务端恢复。
-
-## API Server
-
-### 为什么选择 NestJS
-
-该产品的后端会逐渐形成清晰的业务域，而不是一组简单的 API Routes：
+## Target System Shape
 
 ```text
-NestJS
-  |- AuthModule
-  |- ProjectModule
-  |- SessionModule
-  |- AgentRunModule
-  |- AgentModule
-  |- SandboxModule
-  |- WorkspaceModule
-  |- EventModule
-  |- ApprovalModule
-  |- ModelModule
-  `- EvalModule
+Browser
+  -> Web
+  -> API (Auth, REST, SSE)
+       -> PostgreSQL
+       -> Object Storage
+       -> Job Queue
+            -> Agent Worker
+                 -> Agent Runtime
+                      -> Model Gateway
+                      -> Tool Registry
+                      -> Sandbox Interface
+                           -> isolated Workspace
+                                -> Files / Shell / Build / Preview
 ```
 
-NestJS 的模块、依赖注入、Guard、Interceptor 和生命周期机制适合组织这些边界。但 NestJS 本身并不自动提供持久化的长任务能力，因此生产环境仍应将 Agent 执行放入独立 Worker，并按需要引入任务队列。
+MVP 可以暂时省略 Queue 和远程 Sandbox Provider，但不得省略持久化 Run/Event、API/Worker 进程边界和 Sandbox 接口边界。
 
-### API Server 的职责
+## Target Boundaries
 
-- 用户认证与项目权限
-- 创建和查询 Project、Session、AgentRun
-- 接收 Interrupt、Resume、Retry 和 Approval 命令
-- 对外提供 REST API 与 SSE
-- 将待执行任务提交给 Worker
-- 查询持久化状态，不持有唯一的运行时状态
+| Component      | Target responsibility                              | Must not become                         |
+| -------------- | -------------------------------------------------- | --------------------------------------- |
+| Web            | Chat、文件、Run 状态、审批、日志和 Preview         | 权威 Run 状态或直接 Sandbox 客户端      |
+| API            | Auth、权限、业务命令、查询、SSE 和调度入口         | 长时间 Agent Runtime                    |
+| Job Queue      | 交付、延迟、并发和调度                             | Run 状态或审计事实来源                  |
+| Worker         | 领取 Attempt、执行 Runtime、维护租约和持久化结果   | 对外业务 API                            |
+| Agent Runtime  | Agent loop、上下文、Tool 调用、取消和恢复          | HTTP Controller 或具体 Sandbox Provider |
+| Sandbox        | 隔离 Workspace、进程、资源、网络和 Preview         | 宿主机文件系统或长期凭据容器            |
+| Model Gateway  | Provider 路由、访问控制、预算和用量                | Agent 状态机或 Tool 编排                |
+| PostgreSQL     | Run、Attempt、Event、Approval、Checkpoint 和元数据 | 大型日志、构建产物或 Workspace 归档     |
+| Object Storage | Artifact、截图、日志包和 Workspace 快照            | 可查询业务状态                          |
 
-## Agent Runtime
+## Target Run Model
 
-第一阶段使用：
+扩展 Run 生命周期前，应先区分 Run 和 Attempt：
 
 ```text
-@openai/agents
+Agent Run
+  -> Attempt 1 -> failed
+  -> Attempt 2 -> running -> completed
 ```
 
-OpenAI Agents SDK 与 LiteLLM 的具体接入边界、配置和实施阶段见 [Model Gateway and Agent Runtime](model-gateway.md)。
+- Run 表示一次用户意图和长期业务记录。
+- Attempt 表示一次具体 Worker 执行。
+- Retry 新建 Attempt，不覆盖历史结果。
+- Worker 领取、租约、心跳和幂等围绕 Attempt 建模。
 
-并在其上封装稳定的业务接口：
+目标状态机需要通过数据库约束和显式命令实现，不得只依赖布尔字段：
 
 ```text
-AgentRuntime
-  |- run()
-  |- interrupt()
-  |- resume()
-  |- submitApproval()
-  `- subscribe()
-         |
-         v
-OpenAI Agents SDK
-  |- CodingAgent
-  |- Tools
-  |- Context
-  `- Runner
+queued -> running -> completed
+                  -> failed
+                  -> cancelling -> cancelled
+                  -> waiting_for_approval -> running
+                  -> interrupted -> queued (new attempt)
 ```
 
-Controller、Worker 和业务模块不应到处直接调用 `Runner`。统一通过应用自己的接口访问：
+任何新增状态都必须同步 Contracts、数据库约束、事务函数、Worker、SSE、Web 和业务规则。
 
-```ts
-interface AgentRuntime {
-  run(input: RunInput): AsyncIterable<AgentEvent>;
-  interrupt(runId: string): Promise<void>;
-  resume(runId: string): AsyncIterable<AgentEvent>;
-  submitApproval(input: ApprovalInput): Promise<void>;
-}
+## Target Sandbox Contract
+
+Sandbox 至少需要稳定表达：
+
+- Workspace 创建、恢复和销毁。
+- 受控文件读取、写入和目录操作。
+- Shell 命令、超时、退出码、stdout 和 stderr。
+- CPU、内存、磁盘、进程数和执行时间限制。
+- 默认拒绝的网络策略和短期凭据注入。
+- Build/Preview 生命周期和受控访问地址。
+
+Sandbox 内代码始终按不可信代码处理。不得挂载宿主机 Docker Socket、仓库根目录或长期云凭据。
+
+## Target Event Contract
+
+Event envelope 保持稳定标识、Run、Attempt、sequence、type、timestamp 和 payload。未来事件可以覆盖：
+
+- Run 状态和失败。
+- Assistant message delta 和完成。
+- Tool 请求、开始、输出和完成。
+- Approval 请求与决定。
+- 文件变更、Build/Test 和 Preview 状态。
+- Checkpoint 和恢复结果。
+
+高频日志和 token delta 必须批量持久化或聚合，避免数据库写放大。大体积内容进入对象存储，Event 只保存摘要和引用。
+
+## Delivery Sequence
+
+### Foundation: Authorization
+
+- API 验证 Supabase Access Token。
+- 所有 Project 下级资源沿所有权根校验。
+- SSE 建立可携带或验证身份的订阅方案。
+- 加入跨用户负向测试。
+
+后续 Sandbox、Artifact 和发布能力都会扩大数据风险，因此必须先完成授权闭环。
+
+### Coding Workspace
+
+- 定义 Workspace 和 Artifact 的业务生命周期。
+- 实现最小 Sandbox Provider 和文件/Shell Tool。
+- 建立 Tool 输入校验、路径约束、超时和输出限制。
+- 将真实 Build/Preview 状态连接到持久化对象和 UI。
+
+### Durable Execution
+
+- 引入独立 Run Attempt、可续约 lease、心跳和完整悬挂任务处理。
+- 接入 BullMQ/Redis 或经过 ADR 选择的队列。
+- 支持多 Worker、并发限制和幂等领取。
+- 实现持久化取消、重试和恢复。
+
+### Approval and Recovery
+
+- 建模 Approval、Checkpoint 和审计事件。
+- Tool 执行前按风险请求批准。
+- 支持断点恢复，并明确过期、拒绝和重复提交语义。
+
+### Quality and Operations
+
+- Context compaction、预算和模型策略。
+- Build/Test/Runtime verification。
+- Trace、用量、成本和稳定错误观测。
+- Eval pipeline、渐进发布和自动修复策略。
+
+每一阶段都需要对应 Business 定义、Design 状态、Technical 当前文档、Contracts、migration、测试和运维验证；不得仅以接口或 UI 占位宣布完成。
+
+## Decision Gates
+
+实施前必须通过 ADR 或明确技术方案回答：
+
+| Decision            | Required evidence                                     |
+| ------------------- | ----------------------------------------------------- |
+| Queue provider      | 吞吐、延迟、租约、重试、运维和故障恢复需求            |
+| Sandbox provider    | 隔离强度、启动时间、网络、Preview、成本和本地开发体验 |
+| Artifact storage    | 大小、保留期、访问控制、版本和清理策略                |
+| Approval model      | Tool 风险分类、过期、重复决定、审计和恢复             |
+| Run retry semantics | Run/Attempt 关系、幂等、副作用和用户可见状态          |
+| Model routing       | 能力、预算、降级、数据驻留和 Provider 错误差异        |
+
+## Change Map
+
+| Planned capability  | Existing boundaries to inspect                                      |
+| ------------------- | ------------------------------------------------------------------- |
+| Tool                | Business rules、Agent config、Runtime、Events、Approval 和 Sandbox  |
+| Files or Workspace  | Project ownership、Storage、Sandbox、Contracts 和 Preview           |
+| Queue               | Run/Attempt persistence、Worker claim、idempotency 和 observability |
+| Cancel/Resume/Retry | Run state、database functions、Runtime、SSE 和 Web                  |
+| Approval            | Auth、Tool risk、persistent state、events and UX                    |
+| Multi-worker        | leases、heartbeats、SKIP LOCKED、attempts and recovery              |
+| Real Preview        | Artifact authority、Sandbox networking、access control and UI       |
+
+## Reference Verification
+
+路线图更新时执行：
+
+```bash
+pnpm check:docs
+pnpm exec prettier --check docs/technical/architecture-roadmap.md
 ```
 
-这样可以逐步将 Context、Compaction、Retry、Checkpoint 和 Evaluation 沉淀到自有 Runtime，而不与 NestJS Controller 耦合。
-
-### Runtime 内部边界
-
-```text
-Agent Runtime
-  |- Agent Loop
-  |- Context Manager
-  |- Session Manager
-  |- Tool Registry
-  |- Model Provider
-  |- Event Publisher
-  |- Checkpoint Store
-  `- Sandbox Provider
-```
-
-## AgentRun 模型
-
-`AgentRun` 是整个系统的核心实体：
-
-```text
-AgentRun
-  |- id
-  |- projectId
-  |- sessionId
-  |- status
-  |- model
-  |- input
-  |- startedAt
-  |- finishedAt
-  |- interruptedAt
-  `- error
-```
-
-它关联运行过程中的其他数据：
-
-```text
-AgentRun
-  |- Events
-  |- Messages
-  |- ToolCalls
-  |- Approvals
-  |- Checkpoints
-  |- Artifacts
-  `- Evaluations
-```
-
-### 建议状态机
-
-```text
-queued
-  -> running
-  -> waiting_for_approval
-  -> interrupted
-  -> completed
-  -> failed
-  -> cancelled
-```
-
-允许的恢复路径应明确建模，例如：
-
-```text
-waiting_for_approval -> running
-interrupted          -> running
-failed               -> queued (new attempt)
-```
-
-不要仅通过一组布尔字段表达运行状态，否则很容易出现 `completed = true` 与 `failed = true` 同时成立的非法状态。
-
-## Worker 与任务队列
-
-### MVP
-
-开发早期可以由单独的 NestJS Worker 进程直接执行任务：
-
-```text
-API Server -> Database -> Worker
-```
-
-即使暂时不引入队列，也应从第一版开始保持 API 与 Worker 的代码和进程边界。
-
-### 生产阶段
-
-当需要多实例、并发控制、自动重试和故障恢复时，引入：
-
-```text
-BullMQ + Redis
-```
-
-```text
-API Server
-  -> Queue
-  -> Agent Worker
-  -> Agent Runtime
-  -> Sandbox
-```
-
-队列只负责调度，不应成为 AgentRun 状态的唯一数据源。业务状态仍应持久化到 PostgreSQL。
-
-### 执行要求
-
-- 每个 Run 使用稳定的 `runId`
-- Retry 创建明确的 Attempt，避免覆盖历史结果
-- Worker 重复消费时应具备幂等保护
-- 关键步骤生成 Checkpoint
-- 服务重启后能够识别并恢复或终止悬挂任务
-- 并发限制至少覆盖用户、项目和 Sandbox Provider 三个维度
-
-## Sandbox 与 Workspace
-
-### 抽象接口
-
-```text
-SandboxService
-      |
-      v
-Sandbox Interface
-  |- DockerSandbox
-  |- DaytonaSandbox
-  `- E2BSandbox
-```
-
-第一版使用 `DockerSandbox` 即可，但 Runtime 只依赖统一接口：
-
-```ts
-interface Sandbox {
-  createWorkspace(input: CreateWorkspaceInput): Promise<Workspace>;
-  readFile(path: string): Promise<string>;
-  writeFile(path: string, content: string): Promise<void>;
-  exec(command: Command): Promise<CommandResult>;
-  startPreview(input: PreviewInput): Promise<PreviewHandle>;
-  dispose(): Promise<void>;
-}
-```
-
-### Sandbox 职责
-
-- 隔离文件系统与进程
-- 限制 CPU、内存、磁盘和执行时间
-- 控制网络访问
-- 注入最小化的临时凭证
-- 收集 stdout、stderr 和退出码
-- 管理 Workspace 生命周期
-- 暴露受控的 Preview 地址
-
-Sandbox 内运行的代码默认应视为不可信代码。不要直接挂载宿主机 Docker Socket，也不要将长期密钥写入 Workspace。
-
-## 数据库
-
-### 技术选型
-
-```text
-NestJS
-  -> Drizzle ORM
-  -> Supabase PostgreSQL
-```
-
-对于 TypeScript 团队，Drizzle 较轻，并能提供良好的 Schema 与类型体验。如果团队已经大量使用 Prisma，则继续使用 Prisma 更合理，没有必要仅为该项目切换 ORM。
-
-### 核心数据表
-
-```text
-users
-projects
-project_members
-sessions
-messages
-agent_runs
-agent_run_attempts
-agent_events
-tool_calls
-approvals
-checkpoints
-artifacts
-evaluations
-```
-
-大型日志、构建产物、截图和压缩 Workspace 不宜直接存入 PostgreSQL。数据库保存元数据和引用，实际文件放入对象存储，例如 Supabase Storage 或兼容 S3 的服务。
-
-## Model Gateway
-
-模型调用链路：
-
-```text
-Agent Runtime
-  -> ModelService
-  -> OpenAI-compatible API
-  -> LiteLLM
-  -> Provider / Company Model
-```
-
-业务代码不应散落具体模型名称，应通过稳定的逻辑角色选择模型：
-
-```ts
-modelService.getModel("coding");
-modelService.getModel("fast");
-modelService.getModel("reasoning");
-modelService.getModel("vision");
-```
-
-`ModelService` 负责：
-
-- 逻辑角色到具体模型的映射
-- 超时、重试和降级策略
-- Token 与费用记录
-- Provider 能力差异适配
-- 项目或租户级模型策略
-
-模型网关解决的是 Provider 接入与路由问题；Agent Runtime 仍需负责 Tool、Context、Session 和执行状态。
-
-## 前后端通信
-
-### REST：命令与查询
-
-```text
-POST /projects
-GET  /projects/:id
-GET  /projects/:id/files
-
-POST /agent-runs
-GET  /agent-runs/:id
-POST /agent-runs/:id/interrupt
-POST /agent-runs/:id/resume
-POST /agent-runs/:id/retry
-POST /agent-runs/:id/approvals/:approvalId
-```
-
-### SSE：实时事件
-
-```text
-GET /agent-runs/:id/events
-```
-
-建议统一事件 Envelope：
-
-```ts
-interface AgentEvent<T = unknown> {
-  id: string;
-  runId: string;
-  sequence: number;
-  type: string;
-  createdAt: string;
-  payload: T;
-}
-```
-
-事件类型示例：
-
-```text
-run.queued
-run.started
-message.delta
-tool.started
-tool.stdout
-tool.completed
-file.changed
-build.started
-build.failed
-approval.required
-run.interrupted
-run.completed
-run.failed
-```
-
-MVP 阶段 SSE 足以承载服务端到浏览器的单向事件流，不必提前引入 WebSocket。客户端命令仍通过 REST 发送。
-
-SSE 需要支持：
-
-- 事件 ID 或单调递增的 Sequence
-- `Last-Event-ID` 断线续传
-- 心跳与连接超时
-- 重连后从数据库补发遗漏事件
-- 对 Token Delta 等高频事件进行批量写入或合并，避免数据库写放大
-
-## 整体架构
-
-```text
-                         React + Vite
-                               |
-                          REST + SSE
-                               |
-                               v
-                        NestJS API Server
-                     /         |          \
-                    v          v           v
-              PostgreSQL    Object       Job Queue
-                            Storage          |
-                                             v
-                                      Agent Worker
-                                             |
-                                             v
-                                      Agent Runtime
-                                  /          |          \
-                                 v           v           v
-                          ModelService   Event Store   Sandbox
-                               |                         |
-                               v                         v
-                            LiteLLM                    Docker
-                               |                         |
-                               v                         v
-                            Models                   Workspace
-                                                         |
-                                               Files / Shell / Build
-                                                         |
-                                                         v
-                                                      Preview
-```
-
-MVP 可以省略 Redis 和 BullMQ，但不应省略 `AgentRun` 持久化、事件记录以及 API / Worker 的逻辑边界。
-
-## Monorepo 目录建议
-
-```text
-apps/
-  |- web/                  # React + Vite
-  |- api/                  # NestJS API Server
-  `- worker/               # Agent Worker
-
-packages/
-  |- agent-runtime/          # 后续基于 OpenAI Agents SDK 新建
-  |
-  |- sandbox/
-  |   |- sandbox.interface.ts
-  |   `- docker.sandbox.ts
-  |
-  |- database/
-  |   |- schema/
-  |   `- migrations/
-  |
-  |- model/
-  |- contracts/            # API DTO、事件 Schema
-  `- shared/
-```
-
-后续新建的 `packages/agent-runtime` 不应依赖 NestJS Controller，`packages/sandbox` 不应依赖具体 Agent SDK。依赖方向建议保持为：
-
-```text
-apps -> packages
-
-agent-runtime -> sandbox interface / model interface / contracts
-sandbox implementation -> sandbox interface
-```
-
-## 分阶段实施
-
-### Phase 1：可运行的单机 MVP
-
-- React + Vite 基础界面
-- NestJS API
-- OpenAI Agents SDK 封装
-- PostgreSQL 与 Drizzle
-- Docker Sandbox
-- REST + SSE
-- AgentRun、Event、ToolCall 持久化
-- 单独 Worker 进程
-
-### Phase 2：可恢复与可审计
-
-- Interrupt、Resume、Retry
-- Approval 流程
-- Checkpoint
-- SSE 断线续传
-- Artifact 对象存储
-- 完整状态机与审计日志
-
-### Phase 3：生产调度能力
-
-- BullMQ + Redis
-- 多 Worker 与并发限制
-- 超时、重试与故障恢复
-- 远程 Sandbox Provider
-- 模型路由、预算和用量控制
-
-### Phase 4：质量与评测
-
-- Context Compaction
-- Memory
-- Build / Test / Runtime Verification
-- Eval Pipeline
-- Trace 与成本分析
-- Error Detection -> Auto Repair 闭环
-
-## 最终建议
-
-推荐保留以下技术选型：
-
-```text
-React + Vite + TypeScript
-NestJS
-OpenAI Agents SDK
-Drizzle + Supabase PostgreSQL
-LiteLLM
-Docker Sandbox
-REST + SSE
-```
-
-同时从第一版就明确三个边界：
-
-1. NestJS API Server 与 Agent Worker 分离。
-2. Agent Runtime 不直接依赖 Controller 或具体 Sandbox 实现。
-3. SSE 只负责传输，PostgreSQL 中的 AgentRun 与 Event 才是可恢复的状态来源。
-
-这套架构能够先以较低复杂度完成 MVP，也为后续加入 Compaction、Memory、Interrupt、Approval、Retry、Evaluation 和远程 Sandbox 保留清晰的演进路径。
+还必须对照 `ARCHITECTURE.md`、Business 能力状态和代码，确保 Current Baseline 没有把计划描述为事实。路线图本身不证明任何运行时能力已经交付。

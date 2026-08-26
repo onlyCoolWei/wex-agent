@@ -1,131 +1,163 @@
-# Project Workspace Design 项目工作区设计
+# Project Workspace Design
 
 Status: Current
 Last verified: 2026-08-26
-Read when: 修改 Project 工作区、Chat/Preview 面板、移动端切换或 Preview 呈现状态
+Read when: 修改 Project 工作区、Chat/Preview 面板、分隔条、移动端切换或 Preview 状态
 Applies to: `/projects/:projectId` 的组合页面、布局和交互
 
 ## Related
 
 - Business: `docs/business/projects.md`
 - Business: `docs/business/conversations-and-agent-runs.md`
-- Technical: `docs/technical/architecture-roadmap.md`
-- Architecture: `ARCHITECTURE.md`
+- Technical: `docs/technical/conversations-and-agent-runs.md`
+- Technical roadmap: `docs/technical/architecture-roadmap.md`
 - Design system: `DESIGN.md`
 
-## Purpose
+## Design Contract
 
-本文定义用户进入 Project 后，Projects、Conversations、Agent Runs 与 Preview 占位如何组合为一个工作界面。业务规则分别由 [`../business/projects.md`](../business/projects.md) 和 [`../business/conversations-and-agent-runs.md`](../business/conversations-and-agent-runs.md) 负责；本文只拥有页面结构、交互反馈和响应式表现。
+- 必须遵守根目录 `DESIGN.md`。
+- 本文只定义 Projects、Conversations、Agent Runs 与 Preview 占位的组合页面。
+- Project、Message 和 Run 规则以对应 Business 文档为准。
+- 当前 Preview 只能表达占位，不得自行增加 Sandbox 或网站产物能力。
 
-## 1. 用户目标
+## User Goal
 
-- 用户在一个稳定工作区中描述需求，并在真实 Preview 能力接入后查看网站产物。
-- Chat 负责表达意图、进度、错误和恢复操作。
-- Preview 区域当前负责准确表达占位状态，不把静态示例或聊天回复伪装成真实网站。
-- 桌面端支持同时查看 Chat 与 Preview，移动端支持在两者间切换且不丢状态。
+- 在稳定工作区中通过 Chat 持续描述和调整需求。
+- 清楚看到消息加载、回复生成、重连和失败状态。
+- 理解 Preview 当前尚无真实网站产物。
+- 在 Desktop 同时查看两个面板，在 Mobile 切换面板且不丢状态。
 
-## 2. 当前页面结构
-
-Project 工作区路由为 `/projects/:projectId`，占满当前视口：
+## Layout
 
 ```text
 Desktop
 +---------------- Chat ----------------+|+------------- Preview -------------+
-| 返回工作台 / Conversation 状态      ||| Preview header                    |
-| 消息历史与流式回复                  ||| 当前为等待指令占位                 |
-| 输入框与发送                        |||                                  |
+| Conversation header                 ||| Preview header                    |
+| Message history and streamed reply  ||| Current placeholder state         |
+| Composer                            |||                                  |
 +-------------------------------------+|+----------------------------------+
-                    可拖拽分隔条
+                    Resizable separator
 
 Mobile
 +-------------------------------------+
-| 返回工作台       Chat / Preview     |
+| Back             Chat / Preview     |
 +-------------------------------------+
-| 当前选中的单个面板                  |
+| Selected panel                      |
 +-------------------------------------+
 ```
 
-桌面端 Chat 宽度限制为 320-640px，并保存在 `localStorage`；移动端用 Chat / Preview 标签切换。
+| Viewport            | Layout                                         |
+| ------------------- | ---------------------------------------------- |
+| Mobile, `< 768px`   | 顶部返回和 Chat/Preview tabs，一次展示一个面板 |
+| Desktop, `>= 768px` | Chat、键盘可操作分隔条和 Preview 双栏          |
 
-## 3. 当前能力
+## Regions
 
-### 已实现
+| Region          | Responsibility                    | Stable size                            |
+| --------------- | --------------------------------- | -------------------------------------- |
+| Mobile header   | 返回工作台和面板切换              | 52px + top safe area                   |
+| Chat header     | 返回、Conversation 标题和连接状态 | 52px；Mobile 隐藏                      |
+| Message list    | 历史消息、流式内容、空状态和错误  | Flexible                               |
+| Composer        | 文本输入、模型标识和发送          | 56-120px input                         |
+| Separator       | 调整 Chat 宽度                    | Desktop 1px line，9px pointer hit area |
+| Preview header  | 面板名称、地址占位和刷新控件      | 52px                                   |
+| Preview content | idle 或其他已触发的 Preview 状态  | Remaining space                        |
 
-- Project 工作区全视口双栏布局。
-- 桌面端可用指针或键盘调整 Chat 宽度，并保存上次宽度。
-- 移动端一次展示 Chat 或 Preview，切换时保留同一页面组件状态。
-- Chat 提供加载、空对话、发送中、流式、重连和失败状态。
-- Preview 面板具备 idle、starting、ready、error 的展示组件。
+Desktop Chat 宽度为 320-640px，默认 460px，并保存在 `localStorage`。Preview 必须保留至少 440px 可用宽度。
 
-### 已定义未闭环
-
-- Preview 的状态模型和静态示例已存在，但 Project 页面当前从 `idle` 开始，没有业务事件将其切换为真实 `ready`。
-- `GeneratedSitePreview` 是展示用静态组件，不是 Agent 生成结果。
-- 刷新 Preview 的按钮当前没有可用运行环境；idle 状态下不会启动真实预览。
-
-### 暂不支持
-
-- Project 与 Sandbox Workspace 的生命周期绑定。
-- Agent 文件、Shell、Build/Test 和 Preview Tool。
-- iframe Preview URL、刷新、断线恢复和新窗口打开。
-- 文件树、代码编辑器、版本历史、发布和响应式视口切换。
-- Chat 中的 Tool Call、构建日志、审批请求和 Artifact 展示。
-
-## 4. 当前交互规则
+## States
 
 ### Chat
 
-- 进入 Project 后自动取得最近活跃 Conversation，没有则创建。
-- 初始空状态提供少量提示，但提示只能触发当前文本对话能力。
-- `Enter` 发送，`Shift + Enter` 换行；输入法组合期间不得误发送。
-- active Run 存在时输入和发送禁用，等待当前回复终止。
-- 加载失败保留工作区结构并提供重试；发送失败恢复原输入。
+| State        | Required UI                                       |
+| ------------ | ------------------------------------------------- |
+| Loading      | 固定消息区域中的进度指示                          |
+| Load error   | “会话暂时无法加载”、错误说明和重试                |
+| Empty        | 简短说明和只触发文本对话的建议操作                |
+| Sending      | 保留乐观 User Message，禁用 Composer              |
+| Streaming    | Assistant Message 增量文本和“回复中”状态          |
+| Reconnecting | 保留消息并展示“正在重连”                          |
+| Failed       | Assistant Message 错误、Composer 错误和可恢复输入 |
 
 ### Preview
 
-- idle 文案只能表达“等待第一个指令”和未来出现位置，不能声称网站已经生成。
-- starting 只能在真实 Sandbox/Preview 启动动作发生后使用。
-- ready 只能在可访问的 Preview 资源已就绪后使用。
-- error 必须说明预览链路失败，并在存在真实重试操作时提供重试。
-- 静态 `GeneratedSitePreview` 不能作为产品数据，也不能根据聊天完成事件直接展示为用户生成网站。
+| State      | Current exposure               | Required UI                                 |
+| ---------- | ------------------------------ | ------------------------------------------- |
+| `idle`     | Project 页面当前唯一入口状态   | “等待你的第一个指令”，不得暗示已生成网站    |
+| `starting` | 组件支持，但没有真实启动事件   | 启动说明和明确进度                          |
+| `ready`    | 组件支持静态示例，不是产品数据 | 只有真实 Preview 资源就绪后才能用于产品状态 |
+| `error`    | 组件支持，但没有真实运行链路   | 错误说明；只有存在真实动作时才展示重试      |
 
-### 响应式
+## Interactions
 
-- 桌面双栏调整不得把 Chat 压缩到 320px 以下，也必须给 Preview 留出可用空间。
-- 移动端只切换可见面板，不应卸载并丢失输入、消息连接或 Preview 状态。
-- 输入区处理底部安全区，页面根容器不产生横向滚动。
+### Chat
 
-## 5. 能力表达边界
+- `Enter` 发送，`Shift + Enter` 换行；输入法组合期间不得误发送。
+- active Run 存在时禁用输入和发送。
+- 点击空状态建议会提交对应文本，不得触发 Tool 或 Preview。
+- 发送失败时撤销乐观消息并恢复原输入。
+- 新消息和流式更新保持当前 Conversation 的末尾可见。
 
-本文不定义 Sandbox、Artifact 或真实 Preview 的业务生命周期和技术方案。当前只能依据已有业务能力展示占位；接入真实 Preview 前，必须先在业务文档中定义权威状态和用户操作，再在技术文档中定义资源、权限和失败语义，最后由本文补充对应页面表现。
+### Panels
 
-## 6. 设计约束
+- Desktop 分隔条支持 Pointer 拖拽。
+- 分隔条获得焦点后，`ArrowLeft` / `ArrowRight` 每次调整 24px。
+- 调整不得超出 Chat 320-640px，也不得侵占 Preview 的 440px 最小宽度。
+- Mobile tabs 只改变可见面板，不改变业务状态。
+- 切换面板不得卸载并丢失输入、消息连接或 Preview 状态。
 
-- Project 工作区是 UI 容器，不是 Sandbox 已存在的证明。
-- Chat 回复完成不等于网站构建成功，Run 状态与 Preview 状态必须独立建模。
-- Preview ready 必须对应当前 Project 的真实、可访问、受隔离运行结果。
-- Project 切换时不能展示上一个 Project 的 Preview URL、日志或文件。
-- 移动端切换和桌面拖拽只改变呈现，不改变服务端业务状态。
+### Preview
 
-## 7. 修改影响检查
+- idle 只能表达等待指令和未来内容位置。
+- idle 中的刷新控件当前不执行操作，也不得进入静态 ready 状态。
+- starting 只能由真实 Preview 启动动作触发。
+- ready 必须对应当前 Project 的真实、可访问且受隔离运行结果。
+- error 必须说明 Preview 链路失败，并只在存在真实重试动作时提供重试。
 
-- UI 文案是否准确反映当前能力，没有把占位描述成真实生成。
-- 新 Preview 状态是否有明确触发者、权威来源、失败和恢复路径。
-- Project 离开、删除、刷新和切换时是否正确清理连接与临时资源。
-- 桌面和窄屏是否都能完成相同核心任务。
+## Responsive
 
-## 8. 验收基线
+- Mobile 只展示当前 tab 对应面板，不把 Chat 与 Preview 并排压缩。
+- Composer 必须处理底部 safe area。
+- 页面根容器固定于动态视口，不得产生页面级或横向滚动。
+- 长消息、错误和状态文案必须在各自面板内换行。
+- Mobile 切换与 Desktop 拖拽不得改变服务端状态。
 
-- 工作区在桌面端无页面级溢出，Chat 与 Preview 都保有可用最小尺寸。
-- 移动端可以切换面板且不丢失未发送输入和当前消息状态。
-- Chat 的加载、空、发送、重连和错误状态不导致布局跳变。
-- 当前占位 Preview 不会被误解为用户生成的网站。
-- 引入真实 Preview 时，本文必须基于已经定义的业务状态补充 ready、失败和恢复表现。
+## Accessibility
 
-## 9. 实现定位
+- Mobile 面板切换必须使用 tablist、tab 和 `aria-selected`。
+- Chat、Preview 和分隔条必须具有明确可访问名称。
+- 分隔条必须暴露方向、最小值、最大值和当前值。
+- 图标按钮必须提供 `aria-label` 和 tooltip。
+- Loading、Streaming、Reconnecting 和 Error 不得只依赖颜色。
+- Composer 和发送按钮必须有稳定标签和禁用状态。
 
-- 页面容器：`apps/web/src/pages/project/project-page.tsx`
-- Chat：`apps/web/src/pages/project/chat-panel.tsx`
-- Preview 状态：`apps/web/src/pages/project/preview-panel.tsx`
-- 静态示例：`apps/web/src/pages/project/generated-site-preview.tsx`
-- Sandbox 边界：`packages/sandbox/src/index.ts`
+## Prohibited
+
+- 不把 Project 工作区或静态 Preview 示例描述成 Sandbox 已经存在。
+- 不把 Chat 回复完成等同于网站构建或 Preview ready。
+- 不根据聊天完成事件直接展示 `GeneratedSitePreview`。
+- 不让没有真实运行环境的刷新控件制造 starting 或 ready 状态。
+- 不展示没有真实能力支撑的打开新窗口或设备切换操作。
+- 不在切换 Project 后保留上一个 Project 的 Preview、日志或文件。
+- 不让面板切换、拖拽或动态消息造成重叠和页面跳动。
+
+## Known UI Gaps
+
+- Preview 刷新控件在 idle 状态仍显示为可操作，但当前点击没有反馈或状态变化。
+
+## Code Map
+
+- Page and panels: `apps/web/src/pages/project/project-page.tsx`
+- Chat: `apps/web/src/pages/project/chat-panel.tsx`
+- Preview states: `apps/web/src/pages/project/preview-panel.tsx`
+- Static example: `apps/web/src/pages/project/generated-site-preview.tsx`
+
+## Visual Acceptance
+
+- [ ] Desktop 无页面级溢出，Chat 与 Preview 都保有最小可用宽度
+- [ ] 分隔条支持 Pointer 和键盘调整，并准确暴露当前值
+- [ ] Mobile 可以切换面板且不丢失未发送输入和消息状态
+- [ ] Chat 的 Loading、Empty、Sending、Streaming、Reconnecting 和 Error 状态完整
+- [ ] 动态消息、错误和 Composer 不造成布局跳动或重叠
+- [ ] 当前 Preview 占位不会被误解为用户生成的网站
+- [ ] 页面符合根目录 `DESIGN.md`
