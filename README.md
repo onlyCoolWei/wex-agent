@@ -99,7 +99,7 @@ pnpm plan
 - Supabase Email/Password、Google OAuth 与 Web 受保护路由
 - Project 创建、列表、打开、删除与 Supabase 持久化
 - Conversation、Message、AgentRun、AgentEvent 持久化和 SSE 流式对话
-- OpenAI Agents SDK + LiteLLM 单一网关的 Worker 执行链路
+- OpenAI Agents SDK + LiteLLM 单一网关的 Worker 执行链路，并通过 Langfuse（OpenTelemetry）记录运行观测
 
 暂未接入：
 

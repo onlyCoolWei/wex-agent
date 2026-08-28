@@ -6,6 +6,7 @@ import { AgentRuntimeService } from "./agent-runtime.service.js";
 import { RunCancellationRegistry } from "./run-cancellation.registry.js";
 import { SdkEventMapper } from "./sdk-event.mapper.js";
 import { MODEL_CONFIG, MODEL_ENVIRONMENT } from "./tokens.js";
+import { LangfuseTracingService } from "../observability/langfuse-tracing.service.js";
 
 @Module({
   providers: [
@@ -15,6 +16,7 @@ import { MODEL_CONFIG, MODEL_ENVIRONMENT } from "./tokens.js";
     AgentFactory,
     SdkEventMapper,
     RunCancellationRegistry,
+    LangfuseTracingService,
     AgentRuntimeService,
   ],
   exports: [AgentRuntimeService],

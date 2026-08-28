@@ -1,3 +1,14 @@
+### 2026-08-29
+
+- 🔧 完善 Langfuse OTEL 接入：显式传递配置、过滤 Worker Run span，并记录取消终态。
+- ✨ 按 Langfuse 最佳实践补充 Agent/generation 层级、Conversation session、模型与 token usage 观测，并保持输入输出脱敏。
+- 🔧 修复终态事件提前结束异步迭代导致 Langfuse 根 observation 误报 ERROR 的问题，并增加回归断言。
+- 🔧 按授权开放所有环境的 Langfuse 完整对话输入输出记录，使用标准 role/content 结构便于语义问题排查。
+
+### 2026-08-28
+
+- ✨ 移除 OpenAI Agents SDK Tracing，改用 Langfuse OpenTelemetry 记录 Worker Agent Run 观测。
+
 ### 2026-08-26
 
 - 🔧 统一 Business、Design、Technical 模块主文档的英文文件名与一级标题，并新增文档名称一致性检查

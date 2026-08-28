@@ -8,6 +8,20 @@ import { AgentFactory } from "./agent.factory.js";
 import { AgentRuntimeService } from "./agent-runtime.service.js";
 import { RunCancellationRegistry } from "./run-cancellation.registry.js";
 import { SdkEventMapper } from "./sdk-event.mapper.js";
+import { LangfuseTracingService } from "../observability/langfuse-tracing.service.js";
+
+class RecordingTracingService extends LangfuseTracingService {
+  readonly statuses: string[] = [];
+
+  override startRun(input: Parameters<LangfuseTracingService["startRun"]>[0]) {
+    return {
+      startGeneration: () => ({ end: () => undefined }),
+      end: (status: "completed" | "failed" | "cancelled") => {
+        this.statuses.push(status);
+      },
+    };
+  }
+}
 
 describe("AgentRuntimeService LiteLLM contract", () => {
   const requests: Array<{ url?: string; authorization?: string }> = [];
@@ -74,6 +88,7 @@ describe("AgentRuntimeService LiteLLM contract", () => {
       litellmBaseUrl: `http://127.0.0.1:${port}/v1`,
       litellmApiKey: "worker-virtual-key",
     };
+    const tracing = new RecordingTracingService();
     const runtime = new AgentRuntimeService(
       environment,
       { ...DEFAULT_MODEL_CONFIG, requestTimeoutMs: 5_000 },
@@ -81,6 +96,7 @@ describe("AgentRuntimeService LiteLLM contract", () => {
       new AgentFactory(),
       new SdkEventMapper(),
       new RunCancellationRegistry(),
+      tracing,
     );
     const events: AgentEvent[] = [];
 
@@ -115,5 +131,6 @@ describe("AgentRuntimeService LiteLLM contract", () => {
       events.map((event) => event.sequence),
       [1, 2, 3, 4, 5],
     );
+    assert.deepEqual(tracing.statuses, ["completed"]);
   });
 });

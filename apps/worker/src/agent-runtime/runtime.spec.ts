@@ -10,11 +10,13 @@ import { describe, it } from "node:test";
 import { RunCancellationRegistry } from "./run-cancellation.registry.js";
 import { mapRuntimeError } from "./runtime-error.mapper.js";
 import { SdkEventMapper } from "./sdk-event.mapper.js";
+import { LangfuseTracingService } from "../observability/langfuse-tracing.service.js";
 
 const validModelEnv: NodeJS.ProcessEnv = {
   LITELLM_BASE_URL: "http://localhost:4000/v1",
   LITELLM_API_KEY: "virtual-key",
-  OPENAI_TRACE_API_KEY: "trace-key",
+  LANGFUSE_PUBLIC_KEY: "pk-lf-test",
+  LANGFUSE_SECRET_KEY: "sk-lf-test",
 };
 
 describe("model environment and catalog", () => {
@@ -45,14 +47,14 @@ describe("model environment and catalog", () => {
     );
   });
 
-  it("keeps tracing optional and separate from the model provider", () => {
+  it("keeps Langfuse configuration optional and separate from the model provider", () => {
     const environment = loadModelEnvironment({
       ...validModelEnv,
-      OPENAI_TRACE_API_KEY: "",
+      LANGFUSE_PUBLIC_KEY: "",
+      LANGFUSE_SECRET_KEY: "",
     });
     const factory = new AgentsModelProviderFactory(environment);
 
-    assert.equal(factory.configureTracing(), false);
     assert.ok(factory.create());
   });
 });
@@ -99,6 +101,21 @@ describe("SDK event mapping", () => {
 });
 
 describe("runtime failures and cancellation", () => {
+  it("ends tracing spans with the cancellation terminal state", () => {
+    const tracing = new LangfuseTracingService();
+    const run = tracing.startRun({
+      runId: "run-1",
+      attemptId: "attempt-1",
+      projectId: "project-1",
+      conversationId: "conversation-1",
+      assistantMessageId: "message-1",
+      userId: "user-1",
+      workspaceId: "workspace-1",
+      input: [],
+    });
+    assert.doesNotThrow(() => run.end("cancelled"));
+  });
+
   it("maps gateway failures to stable safe codes", () => {
     const rateLimit = Object.assign(new Error("provider secret response"), {
       status: 429,

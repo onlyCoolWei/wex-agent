@@ -21,12 +21,12 @@ import { RunCancellationRegistry } from "./run-cancellation.registry.js";
 import { mapRuntimeError } from "./runtime-error.mapper.js";
 import { SdkEventMapper } from "./sdk-event.mapper.js";
 import { MODEL_CONFIG, MODEL_ENVIRONMENT } from "./tokens.js";
+import { LangfuseTracingService } from "../observability/langfuse-tracing.service.js";
 
 @Injectable()
 export class AgentRuntimeService implements AgentRuntime {
   private readonly modelCatalog: ModelCatalog;
   private readonly providerFactory: AgentsModelProviderFactory;
-  private readonly tracingEnabled: boolean;
 
   constructor(
     @Inject(MODEL_ENVIRONMENT) environment: ModelEnvironment,
@@ -39,10 +39,11 @@ export class AgentRuntimeService implements AgentRuntime {
     private readonly eventMapper: SdkEventMapper,
     @Inject(RunCancellationRegistry)
     private readonly cancellationRegistry: RunCancellationRegistry,
+    @Inject(LangfuseTracingService)
+    private readonly tracing: LangfuseTracingService,
   ) {
     this.modelCatalog = new ModelCatalog(modelConfig);
     this.providerFactory = new AgentsModelProviderFactory(environment);
-    this.tracingEnabled = this.providerFactory.configureTracing();
   }
 
   async *run(input: StartAgentRunInput): AsyncIterable<AgentEvent> {
@@ -63,6 +64,12 @@ export class AgentRuntimeService implements AgentRuntime {
       timedOut = true;
       this.cancellationRegistry.cancel(input.runId, "Agent model request timed out");
     }, this.modelConfig.requestTimeoutMs);
+    const trace = this.tracing.startRun(input);
+    const generation = trace.startGeneration(model.alias, model.configVersion);
+    let output = "";
+    let usageDetails: Record<string, number> | undefined;
+    let generationStatusMessage: string | undefined;
+    let traceStatus: "completed" | "failed" | "cancelled" = "failed";
 
     yield event("run.started", {
       attemptId: input.attemptId,
@@ -76,19 +83,7 @@ export class AgentRuntimeService implements AgentRuntime {
     try {
       const runner = new Runner({
         modelProvider: this.providerFactory.create(),
-        tracingDisabled: !this.tracingEnabled,
-        traceIncludeSensitiveData: false,
-        workflowName: "Wex coding agent run",
-        groupId: input.runId,
-        traceMetadata: {
-          runId: input.runId,
-          attemptId: input.attemptId,
-          projectId: input.projectId,
-          conversationId: input.conversationId,
-          agentId: agentConfig.id,
-          agentVersion: agentConfig.version,
-          modelAlias: model.alias,
-        },
+        tracingDisabled: true,
       });
       const context: WexRunContext = {
         runId: input.runId,
@@ -117,12 +112,25 @@ export class AgentRuntimeService implements AgentRuntime {
       for await (const sdkEvent of result) {
         const mapped = this.eventMapper.map(sdkEvent, input.assistantMessageId);
         if (mapped) {
+          if (mapped.type === "message.delta") {
+            output += (mapped.payload as { delta: string }).delta;
+          } else if (mapped.type === "message.completed") {
+            output = (mapped.payload as { content: string }).content;
+          } else if (mapped.type === "usage.updated") {
+            const usage = mapped.payload as { inputTokens: number; outputTokens: number };
+            usageDetails = {
+              input: usage.inputTokens,
+              output: usage.outputTokens,
+              total: usage.inputTokens + usage.outputTokens,
+            };
+          }
           yield event(mapped.type, mapped.payload);
         }
       }
       await result.completed;
 
       if (timedOut) {
+        generationStatusMessage = "MODEL_TIMEOUT";
         yield event("run.failed", {
           code: "MODEL_TIMEOUT",
           retryable: true,
@@ -131,31 +139,40 @@ export class AgentRuntimeService implements AgentRuntime {
         return;
       }
       if (signal.aborted || result.cancelled) {
+        traceStatus = "cancelled";
         yield event("run.cancelled");
         return;
       }
 
       const content = typeof result.finalOutput === "string" ? result.finalOutput : "";
+      output = content;
       yield event("message.completed", {
         messageId: input.assistantMessageId,
         content,
       });
+      traceStatus = "completed";
       yield event("run.completed");
     } catch (error) {
       if (timedOut) {
+        generationStatusMessage = "MODEL_TIMEOUT";
         yield event("run.failed", {
           code: "MODEL_TIMEOUT",
           retryable: true,
           message: "Model gateway request timed out",
         });
       } else if (signal.aborted) {
+        traceStatus = "cancelled";
         yield event("run.cancelled");
       } else {
-        yield event("run.failed", mapRuntimeError(error));
+        const mappedError = mapRuntimeError(error);
+        generationStatusMessage = mappedError.code;
+        yield event("run.failed", mappedError);
       }
     } finally {
       clearTimeout(timeout);
       this.cancellationRegistry.release(input.runId);
+      generation.end(output, usageDetails, generationStatusMessage);
+      trace.end(traceStatus, output);
     }
   }
 

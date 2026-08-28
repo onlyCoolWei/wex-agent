@@ -28,9 +28,10 @@ ChatRunProcessorService
        -> ModelCatalog
        -> AgentsModelProviderFactory
        -> AgentFactory
-       -> OpenAI Agents SDK Runner
+       -> OpenAI Agents SDK Runner (SDK tracing disabled)
        -> LiteLLM /v1
        -> upstream model
+       -> Langfuse via OpenTelemetry
   <- AgentEvent stream
   -> persisted chat events and terminal state
 ```
@@ -49,16 +50,20 @@ ChatRunProcessorService
 
 ## Model Configuration
 
-| Setting                   | Current value or rule                                      |
-| ------------------------- | ---------------------------------------------------------- |
-| Gateway                   | 单一远程 LiteLLM Proxy                                     |
-| Protocol                  | OpenAI-compatible Chat Completions (`useResponses: false`) |
-| `LITELLM_BASE_URL`        | 必填绝对 HTTP(S) URL，路径必须指向 `/v1`                   |
-| `LITELLM_API_KEY`         | 必填 LiteLLM virtual key，只存在于 Worker                  |
-| `OPENAI_TRACE_API_KEY`    | 可选；存在时启用 OpenAI trace export                       |
-| Request timeout           | 120,000ms                                                  |
-| Strict feature validation | enabled                                                    |
-| Trace sensitive data      | disabled                                                   |
+| Setting                        | Current value or rule                                            |
+| ------------------------------ | ---------------------------------------------------------------- |
+| Gateway                        | 单一远程 LiteLLM Proxy                                           |
+| Protocol                       | OpenAI-compatible Chat Completions (`useResponses: false`)       |
+| `LITELLM_BASE_URL`             | 必填绝对 HTTP(S) URL，路径必须指向 `/v1`                         |
+| `LITELLM_API_KEY`              | 必填 LiteLLM virtual key，只存在于 Worker                        |
+| `LANGFUSE_PUBLIC_KEY`          | 可选；与 Secret Key 同时配置时启用 Worker Langfuse OTEL          |
+| `LANGFUSE_SECRET_KEY`          | 可选；Worker-only Langfuse project secret                        |
+| `LANGFUSE_BASE_URL`            | 可选；传给 Langfuse OTLP exporter，默认云端地址                  |
+| `LANGFUSE_TRACING_ENVIRONMENT` | 可选；Langfuse environment，默认使用 `NODE_ENV` 或 `development` |
+| `LANGFUSE_RELEASE`             | 可选；Langfuse release 标识                                      |
+| Request timeout                | 120,000ms                                                        |
+| Strict feature validation      | enabled                                                          |
+| Trace sensitive data           | disabled；只记录 Run 标识、Agent 标识和终态                      |
 
 逻辑角色和当前别名由 `DEFAULT_MODEL_CONFIG` 管理：
 
@@ -137,9 +142,11 @@ SDK 中与当前产品无关的原始事件会被忽略。新增事件必须同�
 
 ## Security
 
-- LiteLLM 和 trace key 只从 Worker 环境读取，不进入 Contracts、数据库事件或 Web。
-- Trace 默认关闭；只有配置 `OPENAI_TRACE_API_KEY` 时启用。
-- Trace 明确禁用 sensitive data，metadata 只包含运行标识和配置标识。
+- LiteLLM 和 Langfuse credentials 只从 Worker 环境读取，不进入 Contracts、数据库事件或 Web。
+- OpenAI Agents SDK tracing 永久关闭；Worker 启动时将 Langfuse credentials 显式传给 OpenTelemetry span processor，并只导出 `wex-agent-run` / `wex-generate-response` span。
+- 每次 Agent Run 创建一个 `agent` 根 observation 和一个嵌套的 `generation` observation；两者传播 Conversation session、User、environment、release 和稳定元数据。
+- Langfuse observation 按当前明确授权记录完整用户消息正文和模型输出，以便排查语义问题；API key 仍不会进入 observation。输入/输出使用标准 `role`/`content` 消息结构，generation 额外记录模型别名、配置版本和 token usage。
+- 完整内容会发送到配置的 Langfuse 项目；该项目必须按敏感数据处理，配置访问控制、保留期限和删除策略。
 - LiteLLM virtual key 应按环境和服务隔离，并在网关侧配置预算、模型访问和轮换策略。
 - Agent 输入和模型输出按不可信内容处理；未来 Tool/Sandbox 接入必须建立独立授权与隔离边界。
 
