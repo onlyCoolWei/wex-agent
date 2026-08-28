@@ -58,13 +58,22 @@ export class AgentRuntimeService implements AgentRuntime {
     });
     const agentConfig = this.agentConfigRegistry.get(input.agentId);
     const model = this.modelCatalog.resolve(agentConfig.modelRole);
+    const sdkInput: AgentInputItem[] = input.input.map((item) =>
+      item.role === "user"
+        ? { role: "user", content: item.content }
+        : {
+            role: "assistant",
+            status: "completed",
+            content: [{ type: "output_text", text: item.content }],
+          },
+    );
     const signal = this.cancellationRegistry.create(input.runId);
     let timedOut = false;
     const timeout = setTimeout(() => {
       timedOut = true;
       this.cancellationRegistry.cancel(input.runId, "Agent model request timed out");
     }, this.modelConfig.requestTimeoutMs);
-    const trace = this.tracing.startRun(input);
+    const trace = this.tracing.startRun(input, sdkInput);
     const generation = trace.startGeneration(model.alias, model.configVersion);
     let output = "";
     let usageDetails: Record<string, number> | undefined;
@@ -93,15 +102,6 @@ export class AgentRuntimeService implements AgentRuntime {
         workspaceId: input.workspaceId,
       };
       const agent: Agent<WexRunContext> = this.agentFactory.create(agentConfig, model.alias);
-      const sdkInput: AgentInputItem[] = input.input.map((item) =>
-        item.role === "user"
-          ? { role: "user", content: item.content }
-          : {
-              role: "assistant",
-              status: "completed",
-              content: [{ type: "output_text", text: item.content }],
-            },
-      );
       const result = await runner.run(agent, sdkInput, {
         stream: true,
         maxTurns: agentConfig.maxTurns,

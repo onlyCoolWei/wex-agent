@@ -4,6 +4,7 @@
 - ✨ 按 Langfuse 最佳实践补充 Agent/generation 层级、Conversation session、模型与 token usage 观测，并保持输入输出脱敏。
 - 🔧 修复终态事件提前结束异步迭代导致 Langfuse 根 observation 误报 ERROR 的问题，并增加回归断言。
 - 🔧 按授权开放所有环境的 Langfuse 完整对话输入输出记录，使用标准 role/content 结构便于语义问题排查。
+- 🔧 Langfuse tracing 改为复用 Runner 实际使用的完整 AgentInputItem 数组，保留 assistant status 与嵌套 content 结构。
 
 ### 2026-08-28
 

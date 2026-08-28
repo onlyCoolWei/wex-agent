@@ -1,3 +1,4 @@
+import type { AgentInputItem } from "@openai/agents";
 import type { AgentEvent } from "@wex/contracts";
 import { DEFAULT_MODEL_CONFIG, type ModelEnvironment } from "@wex/model";
 import assert from "node:assert/strict";
@@ -12,8 +13,13 @@ import { LangfuseTracingService } from "../observability/langfuse-tracing.servic
 
 class RecordingTracingService extends LangfuseTracingService {
   readonly statuses: string[] = [];
+  readonly inputs: AgentInputItem[][] = [];
 
-  override startRun(input: Parameters<LangfuseTracingService["startRun"]>[0]) {
+  override startRun(
+    input: Parameters<LangfuseTracingService["startRun"]>[0],
+    sdkInput?: AgentInputItem[],
+  ) {
+    if (sdkInput) this.inputs.push(sdkInput);
     return {
       startGeneration: () => ({ end: () => undefined }),
       end: (status: "completed" | "failed" | "cancelled") => {
@@ -132,5 +138,6 @@ describe("AgentRuntimeService LiteLLM contract", () => {
       [1, 2, 3, 4, 5],
     );
     assert.deepEqual(tracing.statuses, ["completed"]);
+    assert.deepEqual(tracing.inputs, [[{ role: "user", content: "Say hello" }]]);
   });
 });

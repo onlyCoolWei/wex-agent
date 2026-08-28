@@ -145,7 +145,7 @@ SDK 中与当前产品无关的原始事件会被忽略。新增事件必须同�
 - LiteLLM 和 Langfuse credentials 只从 Worker 环境读取，不进入 Contracts、数据库事件或 Web。
 - OpenAI Agents SDK tracing 永久关闭；Worker 启动时将 Langfuse credentials 显式传给 OpenTelemetry span processor，并只导出 `wex-agent-run` / `wex-generate-response` span。
 - 每次 Agent Run 创建一个 `agent` 根 observation 和一个嵌套的 `generation` observation；两者传播 Conversation session、User、environment、release 和稳定元数据。
-- Langfuse observation 按当前明确授权记录完整用户消息正文和模型输出，以便排查语义问题；API key 仍不会进入 observation。输入/输出使用标准 `role`/`content` 消息结构，generation 额外记录模型别名、配置版本和 token usage。
+- Langfuse observation 按当前明确授权记录完整用户消息正文和模型输出，以便排查语义问题；API key 仍不会进入 observation。输入直接复用 Runner 实际使用的 OpenAI Agents SDK `AgentInputItem[]`（包括 assistant 的 `status` 与嵌套 `content`），generation 额外记录模型别名、配置版本和 token usage。
 - 完整内容会发送到配置的 Langfuse 项目；该项目必须按敏感数据处理，配置访问控制、保留期限和删除策略。
 - LiteLLM virtual key 应按环境和服务隔离，并在网关侧配置预算、模型访问和轮换策略。
 - Agent 输入和模型输出按不可信内容处理；未来 Tool/Sandbox 接入必须建立独立授权与隔离边界。

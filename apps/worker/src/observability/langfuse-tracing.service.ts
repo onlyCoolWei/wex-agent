@@ -1,20 +1,17 @@
 import { Injectable } from "@nestjs/common";
 import { startObservation } from "@langfuse/tracing";
+import type { AgentInputItem } from "@openai/agents";
 import type { StartAgentRunInput } from "@wex/contracts";
 import { shutdownLangfuse } from "./langfuse.js";
 
 type UsageDetails = Record<string, number>;
 
-function formatInput(input: StartAgentRunInput["input"]): Array<{
-  role: "user" | "assistant";
-  content: string;
-}> {
-  return input.map(({ role, content }) => ({ role, content }));
-}
-
 @Injectable()
 export class LangfuseTracingService {
-  startRun(input: StartAgentRunInput): {
+  startRun(
+    input: StartAgentRunInput,
+    sdkInput?: AgentInputItem[],
+  ): {
     startGeneration: (
       model: string,
       modelVersion: string,
@@ -23,10 +20,11 @@ export class LangfuseTracingService {
     };
     end: (status: "completed" | "failed" | "cancelled", output?: string) => void;
   } {
+    const traceInput = sdkInput ?? input.input;
     const agent = startObservation(
       "wex-agent-run",
       {
-        input: formatInput(input.input),
+        input: traceInput,
         metadata: {
           runId: input.runId,
           attemptId: input.attemptId,
@@ -55,7 +53,7 @@ export class LangfuseTracingService {
         const generation = agent.startObservation(
           "wex-generate-response",
           {
-            input: formatInput(input.input),
+            input: traceInput,
             model,
             version: modelVersion,
             metadata: { agentId: input.agentId ?? "main-chat" },
