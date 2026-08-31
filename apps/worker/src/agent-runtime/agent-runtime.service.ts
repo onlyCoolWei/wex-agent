@@ -117,11 +117,19 @@ export class AgentRuntimeService implements AgentRuntime {
           } else if (mapped.type === "message.completed") {
             output = (mapped.payload as { content: string }).content;
           } else if (mapped.type === "usage.updated") {
-            const usage = mapped.payload as { inputTokens: number; outputTokens: number };
+            const usage = mapped.payload as {
+              inputTokens?: number;
+              outputTokens?: number;
+              cachedInputTokens?: number;
+            };
+            const inputTokens = usage.inputTokens ?? 0;
+            const outputTokens = usage.outputTokens ?? 0;
+            const cachedInputTokens = usage.cachedInputTokens ?? 0;
             usageDetails = {
-              input: usage.inputTokens,
-              output: usage.outputTokens,
-              total: usage.inputTokens + usage.outputTokens,
+              input: Math.max(0, inputTokens - cachedInputTokens),
+              output: outputTokens,
+              ...(cachedInputTokens > 0 ? { input_cached_tokens: cachedInputTokens } : {}),
+              total: inputTokens + outputTokens,
             };
           }
           yield event(mapped.type, mapped.payload);

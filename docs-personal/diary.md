@@ -1,6 +1,7 @@
 ### 2026-08-31
 
 - ✨ 将 Agent 配置中的 system prompt 作为首条 system 消息记录到 Langfuse 的 agent/generation observation。
+- ✨ 贯通缓存输入 token 的 usage 事件映射，并以 `input_cached_tokens` 互斥 bucket 记录到 Langfuse。
 
 ### 2026-08-29
 

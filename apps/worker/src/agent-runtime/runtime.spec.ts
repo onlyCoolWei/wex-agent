@@ -72,7 +72,7 @@ describe("SDK event mapping", () => {
     const sdkEvent = {
       type: "raw_model_stream_event",
       data: { type: "output_text_delta", delta: "hello" },
-    } as RunStreamEvent;
+    } as unknown as RunStreamEvent;
 
     assert.deepEqual(mapper.map(sdkEvent, "message-1"), {
       type: "message.delta",
@@ -85,16 +85,22 @@ describe("SDK event mapping", () => {
       type: "raw_model_stream_event",
       data: {
         type: "response_done",
-        response: { usage: { inputTokens: 12, outputTokens: 4 } },
+        response: {
+          usage: {
+            inputTokens: 12,
+            outputTokens: 4,
+            inputTokensDetails: { cachedTokens: 5 },
+          },
+        },
       },
-    } as RunStreamEvent;
+    } as unknown as RunStreamEvent;
     const unknownEvent = {
       type: "agent_updated_stream_event",
     } as RunStreamEvent;
 
     assert.deepEqual(mapper.map(usageEvent, "message-1"), {
       type: "usage.updated",
-      payload: { inputTokens: 12, outputTokens: 4 },
+      payload: { inputTokens: 12, outputTokens: 4, cachedInputTokens: 5 },
     });
     assert.equal(mapper.map(unknownEvent, "message-1"), undefined);
   });

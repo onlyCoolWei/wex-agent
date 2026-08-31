@@ -141,6 +141,7 @@ Run 和 Assistant Message 必须保持对应终态：
 - 同一 Conversation 的 active Run 由数据库唯一约束保护。
 - `(run_id, sequence)` 唯一；SSE cursor 使用 sequence，不依赖数据库 UUID。
 - 事件和最终 Message/Run 状态必须先持久化，再对浏览器可见。
+- `usage.updated` 可携带可选的缓存输入 token；该字段只用于观测和事件回放，数据库终态仍保存原有输入/输出 token。
 - 页面关闭、刷新或 SSE 断线不得取消服务端 Run。
 - Project 删除通过外键级联删除 Conversation、Message、Run 和 Event。
 

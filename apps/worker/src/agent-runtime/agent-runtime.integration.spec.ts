@@ -14,6 +14,7 @@ import { LangfuseTracingService } from "../observability/langfuse-tracing.servic
 class RecordingTracingService extends LangfuseTracingService {
   readonly statuses: string[] = [];
   readonly inputs: AgentInputItem[][] = [];
+  readonly usages: Array<Record<string, number> | undefined> = [];
 
   override startRun(
     input: Parameters<LangfuseTracingService["startRun"]>[0],
@@ -27,7 +28,11 @@ class RecordingTracingService extends LangfuseTracingService {
       ]);
     }
     return {
-      startGeneration: () => ({ end: () => undefined }),
+      startGeneration: () => ({
+        end: (_output: string, usageDetails?: Record<string, number>) => {
+          this.usages.push(usageDetails);
+        },
+      }),
       end: (status: "completed" | "failed" | "cancelled") => {
         this.statuses.push(status);
       },
@@ -69,6 +74,12 @@ describe("AgentRuntimeService LiteLLM contract", () => {
         object: "chat.completion.chunk",
         created: 1,
         model: "coding-fast",
+        usage: {
+          prompt_tokens: 12,
+          completion_tokens: 4,
+          total_tokens: 16,
+          prompt_tokens_details: { cached_tokens: 7 },
+        },
         choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
       })}\n\n`,
     );
@@ -144,6 +155,7 @@ describe("AgentRuntimeService LiteLLM contract", () => {
       [1, 2, 3, 4, 5],
     );
     assert.deepEqual(tracing.statuses, ["completed"]);
+    assert.deepEqual(tracing.usages, [{ input: 5, output: 4, input_cached_tokens: 7, total: 16 }]);
     assert.deepEqual(tracing.inputs, [
       [
         {

@@ -180,6 +180,7 @@ export type MessageCompletedPayload = { messageId: string; content: string };
 export type UsageUpdatedPayload = {
   inputTokens?: number;
   outputTokens?: number;
+  cachedInputTokens?: number;
 };
 export type RunFailedPayload = {
   code: string;
