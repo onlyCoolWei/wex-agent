@@ -2,20 +2,7 @@ import { ChevronRight, CircleUserRound, LogOut, LoaderCircle } from "lucide-reac
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../lib/auth.js";
 import type { Navigate } from "../routing.js";
-
-function Brand() {
-  return (
-    <span className="flex items-center gap-[9px] font-display text-[17px] font-semibold text-ink">
-      <span
-        className="grid size-[27px] place-items-center bg-ink text-[15px] text-[#f9faf6]"
-        aria-hidden="true"
-      >
-        W
-      </span>
-      <span>Wex</span>
-    </span>
-  );
-}
+import { Brand } from "./brand.js";
 
 export function AppHeader({ page, navigate }: { page?: string; navigate: Navigate }) {
   const { user, signOut } = useAuth();
@@ -58,7 +45,7 @@ export function AppHeader({ page, navigate }: { page?: string; navigate: Navigat
       <div className="mx-auto flex h-full w-full max-w-[1264px] items-center justify-between px-4 sm:px-8">
         <div className="flex items-center gap-[9px] text-[13px] text-[#777d75]">
           <button onClick={() => navigate("/")} type="button" aria-label="返回首页">
-            <Brand />
+            <Brand className="text-ink" />
           </button>
           {page && (
             <>

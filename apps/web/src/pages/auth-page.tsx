@@ -10,6 +10,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Brand } from "../components/brand.js";
 import { useAuth } from "../lib/auth.js";
 import type { Navigate } from "../routing.js";
 
@@ -131,10 +132,10 @@ export function AuthPage({ navigate }: { navigate: Navigate }) {
     <main className="min-h-dvh bg-[#f4f6f1] text-ink">
       <div className="mx-auto grid min-h-dvh w-full max-w-[1280px] grid-cols-1 lg:grid-cols-[minmax(0,0.88fr)_minmax(430px,1.12fr)]">
         <section className="relative hidden overflow-hidden border-r border-[#d8ddd4] bg-[#25322b] p-10 text-[#f5f7ef] lg:flex lg:flex-col lg:justify-between">
-          <div className="relative z-10 flex items-center gap-3 font-display text-[18px]">
-            <span className="grid size-8 place-items-center bg-lime text-ink">W</span>
-            <span>Wex</span>
-          </div>
+          <Brand
+            className="relative z-10 gap-3 text-[18px] text-[#f5f7ef]"
+            logoClassName="size-8"
+          />
           <div className="relative z-10 max-w-[390px] pb-12">
             <p className="mb-5 font-mono text-[10px] tracking-[0.18em] text-[#b2c5ae]">
               YOUR NEXT BUILD STARTS HERE
@@ -178,10 +179,7 @@ export function AuthPage({ navigate }: { navigate: Navigate }) {
           </div>
           <div className="mx-auto flex w-full max-w-[450px] flex-1 flex-col justify-center py-12">
             <div className="mb-9 lg:hidden">
-              <div className="mb-7 flex items-center gap-2 font-display text-[18px]">
-                <span className="grid size-8 place-items-center bg-ink text-paper">W</span>
-                <span>Wex</span>
-              </div>
+              <Brand className="mb-7 gap-2 text-[18px] text-ink" logoClassName="size-8" />
             </div>
             <div className="mb-8">
               <p className="mb-3 font-mono text-[10px] font-bold tracking-[0.17em] text-forest">

@@ -1,3 +1,7 @@
+### 2026-09-01
+
+- ✨ 接入 Wex 品牌 Logo，统一网站页眉与认证页标识，并补充浏览器和 Apple Touch 图标。
+
 ### 2026-08-31
 
 - ✨ 将 Agent 配置中的 system prompt 作为首条 system 消息记录到 Langfuse 的 agent/generation observation。
