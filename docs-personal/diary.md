@@ -1,3 +1,7 @@
+### 2026-08-31
+
+- ✨ 将 Agent 配置中的 system prompt 作为首条 system 消息记录到 Langfuse 的 agent/generation observation。
+
 ### 2026-08-29
 
 - 🔧 完善 Langfuse OTEL 接入：显式传递配置、过滤 Worker Run span，并记录取消终态。

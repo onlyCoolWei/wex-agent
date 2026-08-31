@@ -11,6 +11,7 @@ export class LangfuseTracingService {
   startRun(
     input: StartAgentRunInput,
     sdkInput?: AgentInputItem[],
+    systemPrompt?: string,
   ): {
     startGeneration: (
       model: string,
@@ -20,7 +21,10 @@ export class LangfuseTracingService {
     };
     end: (status: "completed" | "failed" | "cancelled", output?: string) => void;
   } {
-    const traceInput = sdkInput ?? input.input;
+    const traceInput = [
+      ...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
+      ...(sdkInput ?? input.input),
+    ];
     const agent = startObservation(
       "wex-agent-run",
       {

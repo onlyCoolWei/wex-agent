@@ -18,8 +18,14 @@ class RecordingTracingService extends LangfuseTracingService {
   override startRun(
     input: Parameters<LangfuseTracingService["startRun"]>[0],
     sdkInput?: AgentInputItem[],
+    systemPrompt?: string,
   ) {
-    if (sdkInput) this.inputs.push(sdkInput);
+    if (sdkInput) {
+      this.inputs.push([
+        ...(systemPrompt ? [{ role: "system", content: systemPrompt } as AgentInputItem] : []),
+        ...sdkInput,
+      ]);
+    }
     return {
       startGeneration: () => ({ end: () => undefined }),
       end: (status: "completed" | "failed" | "cancelled") => {
@@ -138,6 +144,20 @@ describe("AgentRuntimeService LiteLLM contract", () => {
       [1, 2, 3, 4, 5],
     );
     assert.deepEqual(tracing.statuses, ["completed"]);
-    assert.deepEqual(tracing.inputs, [[{ role: "user", content: "Say hello" }]]);
+    assert.deepEqual(tracing.inputs, [
+      [
+        {
+          role: "system",
+          content: [
+            "你是 Wex，一个与用户对话的 AI 助手。",
+            "直接、准确地回答用户，并延续当前会话上下文。",
+            "当前没有任何工具、文件系统或外部访问能力。",
+            "不要声称已经搜索、执行命令、修改文件或完成现实世界操作。",
+            "不确定时明确说明不确定，不编造事实或执行结果。",
+          ].join("\n"),
+        },
+        { role: "user", content: "Say hello" },
+      ],
+    ]);
   });
 });

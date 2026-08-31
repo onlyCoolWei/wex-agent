@@ -116,6 +116,26 @@ describe("runtime failures and cancellation", () => {
     assert.doesNotThrow(() => run.end("cancelled"));
   });
 
+  it("records the configured system prompt in the trace input", () => {
+    const tracing = new LangfuseTracingService();
+    const run = tracing.startRun(
+      {
+        runId: "run-1",
+        attemptId: "attempt-1",
+        projectId: "project-1",
+        conversationId: "conversation-1",
+        assistantMessageId: "message-1",
+        userId: "user-1",
+        workspaceId: "workspace-1",
+        input: [{ role: "user", content: "hello" }],
+      },
+      undefined,
+      "You are Wex.",
+    );
+
+    assert.doesNotThrow(() => run.end("completed"));
+  });
+
   it("maps gateway failures to stable safe codes", () => {
     const rateLimit = Object.assign(new Error("provider secret response"), {
       status: 429,

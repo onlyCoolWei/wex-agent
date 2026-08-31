@@ -73,7 +73,7 @@ export class AgentRuntimeService implements AgentRuntime {
       timedOut = true;
       this.cancellationRegistry.cancel(input.runId, "Agent model request timed out");
     }, this.modelConfig.requestTimeoutMs);
-    const trace = this.tracing.startRun(input, sdkInput);
+    const trace = this.tracing.startRun(input, sdkInput, agentConfig.instructions.join("\n"));
     const generation = trace.startGeneration(model.alias, model.configVersion);
     let output = "";
     let usageDetails: Record<string, number> | undefined;
