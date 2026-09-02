@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
+    "smoke:vite": "node --experimental-strip-types src/smoke.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

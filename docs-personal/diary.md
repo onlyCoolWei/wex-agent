@@ -1,3 +1,7 @@
+### 2026-09-02
+
+- ✨ 新增 Docker Sandbox MVP，支持隔离容器中的文件读写、命令执行和 React + Vite smoke 模板。
+
 ### 2026-09-01
 
 - ✨ 接入 Wex 品牌 Logo，统一网站页眉与认证页标识，并补充浏览器和 Apple Touch 图标。
