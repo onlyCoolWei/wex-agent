@@ -20,7 +20,7 @@ export interface Sandbox {
   readFile(path: string): Promise<string>;
   writeFile(path: string, content: string): Promise<void>;
   exec(input: CommandInput): Promise<CommandResult>;
-  dispose(): Promise<void>;
+  dispose(projectId?: string): Promise<void>;
 }
 
 export type SandboxProvider = "docker" | "daytona" | "e2b";
@@ -47,8 +47,16 @@ export class DockerSandbox implements Sandbox {
   public async createWorkspace(projectId: string): Promise<Workspace> {
     if (this.workspace) return this.workspace;
 
-    const safeProjectId = projectId.replace(/[^a-zA-Z0-9_.-]/g, "-").slice(0, 48) || "project";
-    const name = `wex-sandbox-${safeProjectId}-${Date.now().toString(36)}`;
+    const name = this.containerName(projectId);
+    const existingProjectId = await this.inspectProjectId(name);
+    if (existingProjectId !== undefined) {
+      if (existingProjectId !== projectId) {
+        throw new Error(`Sandbox container ${name} belongs to another project`);
+      }
+      this.workspace = { id: name, root: "/workspace" };
+      return this.workspace;
+    }
+
     const args = [
       "run",
       "-d",
@@ -62,6 +70,10 @@ export class DockerSandbox implements Sandbox {
       `${this.options.memoryMb ?? 1024}m`,
       "--pids-limit",
       String(this.options.pidsLimit ?? 128),
+      "--label",
+      "wex.sandbox=true",
+      "--label",
+      `wex.project-id=${projectId}`,
     ];
     if (!this.options.allowNetwork) args.push("--network", "none");
     args.push(
@@ -116,11 +128,38 @@ export class DockerSandbox implements Sandbox {
     );
   }
 
-  public async dispose(): Promise<void> {
-    if (!this.workspace) return;
-    const id = this.workspace.id;
+  public async dispose(projectId?: string): Promise<void> {
+    if (!this.workspace && projectId === undefined) return;
+    const id = this.workspace?.id ?? this.containerName(projectId!);
     this.workspace = undefined;
-    await this.run(["rm", "-f", id], 15_000).catch(() => undefined);
+    try {
+      await this.run(["rm", "-f", id], 15_000);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("No such container")) return;
+      throw error;
+    }
+  }
+
+  private containerName(projectId: string): string {
+    const safeProjectId = projectId.replace(/[^a-zA-Z0-9_.-]/g, "-").slice(0, 48) || "project";
+    return `wex-sandbox-${safeProjectId}`;
+  }
+
+  private async inspectProjectId(name: string): Promise<string | undefined> {
+    try {
+      const result = await this.run(
+        ["container", "inspect", "--format", '{{index .Config.Labels "wex.project-id"}}', name],
+        15_000,
+      );
+      return result.stdout.trim();
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.message.includes("No such object") || error.message.includes("No such container"))
+      )
+        return undefined;
+      throw error;
+    }
   }
 
   private requireWorkspace(): Workspace {

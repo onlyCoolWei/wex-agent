@@ -1,3 +1,7 @@
+### 2026-09-05
+
+- ✨ 将 Project 生命周期接入本地 Docker Sandbox：创建项目自动创建 Sandbox，删除项目自动释放 Sandbox，并支持 API 重启后按稳定容器名重新关联。
+
 ### 2026-09-02
 
 - ✨ 新增 Docker Sandbox MVP，支持隔离容器中的文件读写、命令执行和 React + Vite smoke 模板。

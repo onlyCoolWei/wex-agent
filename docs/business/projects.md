@@ -24,6 +24,8 @@ Applies to: Workbench 中的 Project 生命周期和下级数据所有权
 - 使用可选名称创建 Project，并在成功后进入 Project 工作区。
 - 从 Project 卡片打开对应工作区。
 - 经二次确认后永久删除 Project 及其下级对话数据。
+- 创建 Project 时自动创建关联的 Sandbox Workspace。
+- 永久删除 Project 时自动释放关联的 Sandbox Workspace。
 
 ## Entities
 
@@ -48,6 +50,7 @@ Applies to: Workbench 中的 Project 生命周期和下级数据所有权
 ## Invariants
 
 - Project 是 Conversation、Message、Run 和网站产物的所有权根；下级权限必须沿 Project 校验。
+- Project 是 Sandbox Workspace 的生命周期所有权根；Sandbox 失败时 Project 创建必须回滚。
 - 创建成功前不得进入伪造的 Project 路由。
 - 删除不得由页面离开或生成失败隐式触发。
 - 物理删除成功后，Conversation、Message、Run 和 Event 不可恢复。
@@ -62,7 +65,8 @@ Applies to: Workbench 中的 Project 生命周期和下级数据所有权
 2. 创建期间禁用重复操作并显示进度。
 3. API 校验可选名称并插入 Project。
 4. Web 使用服务端返回的 `id` 进入 Project 工作区。
-5. 失败时留在工作台，恢复操作并展示可执行错误。
+5. API 创建关联 Sandbox Workspace；失败时回滚 Project。
+6. 失败时留在工作台，恢复操作并展示可执行错误。
 
 ### Open
 
@@ -76,7 +80,8 @@ Applies to: Workbench 中的 Project 生命周期和下级数据所有权
 1. 用户从 Project 卡片触发删除。
 2. 确认对话框展示 Project 名称和不可恢复影响。
 3. 确认后只禁用目标 Project 的相关操作。
-4. API 成功后从列表移除；失败时保留 Project 和对话框上下文供重试。
+4. API 释放关联 Sandbox Workspace 后删除 Project 及下级数据。
+5. 失败时保留 Project 和对话框上下文供重试。
 
 ## Boundaries
 

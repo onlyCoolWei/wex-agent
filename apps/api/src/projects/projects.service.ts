@@ -9,6 +9,7 @@ import {
 import type { CreateProjectRequest, ProjectListResponse, ProjectResponse } from "@wex/contracts";
 import type { Database, SupabaseServerClient } from "@wex/database";
 import { SUPABASE_CLIENT } from "../database/database.constants.js";
+import { ProjectSandboxService } from "../sandbox/project-sandbox.service.js";
 
 type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"];
 type ProjectRow = Database["public"]["Tables"]["projects"]["Row"];
@@ -23,6 +24,7 @@ export class ProjectsService {
   constructor(
     @Inject(SUPABASE_CLIENT)
     private readonly supabase: SupabaseServerClient,
+    private readonly projectSandbox: ProjectSandboxService,
   ) {}
 
   async list(): Promise<ProjectListResponse> {
@@ -53,12 +55,42 @@ export class ProjectsService {
       throw new InternalServerErrorException("创建项目失败");
     }
 
+    try {
+      await this.projectSandbox.create(data.id);
+    } catch (error) {
+      await this.supabase.from("projects").delete().eq("id", data.id);
+      this.logger.error("Failed to create project sandbox", error);
+      throw new InternalServerErrorException("创建项目沙箱失败");
+    }
+
     return this.mapProject(data);
   }
 
   async remove(projectId: string): Promise<void> {
     if (!UUID_PATTERN.test(projectId)) {
       throw new BadRequestException("项目 ID 格式无效");
+    }
+
+    const { data: project, error: lookupError } = await this.supabase
+      .from("projects")
+      .select("id")
+      .eq("id", projectId)
+      .maybeSingle();
+
+    if (lookupError) {
+      this.logDatabaseError("delete", lookupError);
+      throw new InternalServerErrorException("删除项目失败");
+    }
+
+    if (!project) {
+      throw new NotFoundException("项目不存在");
+    }
+
+    try {
+      await this.projectSandbox.dispose(projectId);
+    } catch (error) {
+      this.logger.error("Failed to dispose project sandbox", error);
+      throw new InternalServerErrorException("关闭项目沙箱失败");
     }
 
     const { data, error } = await this.supabase
@@ -70,10 +102,12 @@ export class ProjectsService {
 
     if (error) {
       this.logDatabaseError("delete", error);
+      await this.restoreSandboxAfterDeleteFailure(projectId);
       throw new InternalServerErrorException("删除项目失败");
     }
 
     if (!data) {
+      await this.restoreSandboxAfterDeleteFailure(projectId);
       throw new NotFoundException("项目不存在");
     }
   }
@@ -120,5 +154,13 @@ export class ProjectsService {
       hint: error.hint,
       message: error.message,
     });
+  }
+
+  private async restoreSandboxAfterDeleteFailure(projectId: string): Promise<void> {
+    try {
+      await this.projectSandbox.create(projectId);
+    } catch (error) {
+      this.logger.error("Failed to restore project sandbox after database delete failure", error);
+    }
   }
 }

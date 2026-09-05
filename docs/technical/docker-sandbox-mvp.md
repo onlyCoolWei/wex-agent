@@ -3,7 +3,7 @@
 Status: Implemented (package-level smoke path)
 Last verified: 2026-09-02
 Read when: 实现或验证 Docker Sandbox Provider、文件/命令 Tool 或 Vite smoke 流程
-Applies to: `packages/sandbox` 的 Docker MVP，不代表产品 Sandbox 已完成接入
+Applies to: `packages/sandbox` 的 Docker MVP，以及 Project API 的本地生命周期接入
 
 ## Related
 
@@ -16,8 +16,9 @@ Applies to: `packages/sandbox` 的 Docker MVP，不代表产品 Sandbox 已完�
 ephemeral container per provider instance, writes files under `/workspace`, runs
 commands with timeouts, and applies CPU, memory, PID, and network defaults.
 
-The provider is not yet connected to the Agent Runtime or product Project flow.
-The Vite smoke path only validates the sandbox package boundary.
+The provider is connected to the API Project create/delete flow for local
+development. It is not yet connected to the Agent Runtime or real Preview flow.
+The Vite smoke path validates the provider package boundary independently.
 
 ## Run
 
@@ -40,5 +41,5 @@ container.
 
 This is an MVP isolation boundary, not a VM-grade guarantee for hostile
 multi-tenant workloads. Before exposing arbitrary users, add rootless Docker or
-a stronger provider, authorization, audit events, output quotas, and a reviewed
-network policy.
+a stronger provider, authorization, audit events, output quotas, persistent
+workspace metadata, crash cleanup, and a reviewed network policy.

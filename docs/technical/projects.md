@@ -28,11 +28,12 @@ WorkspacePage
   -> GET | POST | DELETE /api/projects
   -> ProjectsController
   -> ProjectsService
+  -> ProjectSandboxService -> @wex/sandbox -> Docker
   -> @wex/database server client
   -> public.projects
 ```
 
-工作台进入时获取数据库快照。创建使用数据库生成的 Project ID；删除只有在 API 确认成功后才更新本地列表。浏览器不缓存 Project 的权威事实，也不持有高权限 Supabase key。
+工作台进入时获取数据库快照。创建使用数据库生成的 Project ID；删除只有在 API 确认成功后才更新本地列表。浏览器不缓存 Project 的权威事实，也不持有高权限 Supabase key。创建成功返回前，API 已为 Project 创建 Sandbox Workspace；删除 Project 前会释放关联 Sandbox。
 
 ## Boundaries
 
@@ -104,6 +105,7 @@ confirmed user action
 - 数据库成功前，Web 不得制造已创建或已删除的事实。
 - 创建期间两个入口共享同一个 disabled 状态，避免重复请求。
 - 删除期间只锁定目标操作；失败时保留 Project 和确认上下文。
+- Sandbox 创建或释放失败时，API 返回稳定错误，不伪造 Project 生命周期成功。
 - Contract 变化必须同步 API、Web 和数据库映射。
 - Project Schema 变化必须同步 migration、`database.types.ts` 和本文。
 
@@ -131,6 +133,7 @@ confirmed user action
 - `owner_id` 当前可以为空，服务端链路只适合单用户开发环境。
 - Web 和 API 当前没有该模块的自动化测试脚本。
 - Project 页面不先加载 Project 详情；不存在 ID 通过 Conversation 加载错误体现。
+- Sandbox Workspace 当前由 API 进程内登记，API 非优雅崩溃或重启后无法恢复已存在容器；生产使用前需要持久化 Workspace 元数据和清理任务。
 
 ## Change Map
 

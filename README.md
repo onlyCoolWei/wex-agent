@@ -100,12 +100,13 @@ pnpm plan
 - Project 创建、列表、打开、删除与 Supabase 持久化
 - Conversation、Message、AgentRun、AgentEvent 持久化和 SSE 流式对话
 - OpenAI Agents SDK + LiteLLM 单一网关的 Worker 执行链路，并通过 Langfuse（OpenTelemetry）记录运行观测
+- Project 创建/删除时的本地 Docker Sandbox 生命周期
 
 暂未接入：
 
 - API 身份校验、基于 `owner_id` 的多用户数据隔离与完整 RLS 策略
 - BullMQ / Redis 与多 Worker 生产调度
-- Docker Sandbox、文件/命令 Tool 与真实网站 Preview
+- 文件/命令 Tool 与真实网站 Preview
 - AgentRun 的取消、重试、恢复、审批与 Checkpoint
 - 文件版本、发布、团队协作与评测体系
 

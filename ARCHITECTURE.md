@@ -29,7 +29,7 @@ apps/worker
   -> Agent Runtime / LiteLLM
 
 packages/sandbox
-  -> Sandbox interface boundary; current product flow does not execute Sandbox work
+  -> Sandbox interface boundary; API owns Project lifecycle provisioning
 ```
 
 ## Workspace Boundaries
@@ -87,7 +87,8 @@ PostgreSQL 是 Message、Agent Run 和 Agent Event 的权威来源。SSE 只负�
 
 - Web 受保护页面要求有效 Supabase Session。
 - API 的服务端身份校验和基于 `owner_id` 的数据隔离仍需持续补齐；前端路由保护不能替代服务端授权。
-- Sandbox、文件操作和真实网站 Preview 尚未形成运行链路，不能把 `packages/sandbox` 或 Preview 面板描述为已执行能力。
+- Sandbox 已接入 API 的 Project 创建/删除生命周期，但文件操作、Agent Tool 和真实网站 Preview 尚未形成运行链路。
+- Project Sandbox 当前由 API 进程内登记；非优雅崩溃或重启后的容器恢复与清理仍未实现。
 
 ## Change Rules
 

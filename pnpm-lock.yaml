@@ -50,6 +50,9 @@ importers:
       '@wex/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@wex/sandbox':
+        specifier: workspace:*
+        version: link:../../packages/sandbox
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2

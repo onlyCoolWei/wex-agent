@@ -23,7 +23,7 @@ Applies to: Wex 当前产品定义、业务域和 Codex 任务路由
 
 Wex 是一个以对话为主要入口的 AI 网站创作工作台。用户创建 Project，在 Project 工作区中与 Wex 对话，并保存可持续迭代的创作上下文。
 
-当前产品已经打通账号访问、Project 管理、持久化消息、Agent Run 和流式文本回复。Wex Agent 当前没有 Tool、文件或 Sandbox 能力，因此不得声称已经修改文件、生成可运行网站或更新真实 Preview。
+当前产品已经打通账号访问、Project 管理、持久化消息、Agent Run、流式文本回复，以及 Project 创建/删除时的本地 Sandbox 生命周期。Wex Agent 当前没有 Tool、文件操作或真实 Preview 能力，因此不得声称已经修改文件、生成可运行网站或更新真实 Preview。
 
 ## Users
 
@@ -124,7 +124,8 @@ Project 工作区是组合 Projects、Conversations、Agent Runs 和 Preview 占
 | Agent 流式文本回复             | 已实现       | 使用固定 `main-chat`、`gpt-5.6-luna`，且没有 Tool      |
 | Project 归档                   | 暂不支持     | 数据状态有预留，但没有业务操作入口                     |
 | Run 控制                       | 暂不支持     | 取消、重试、恢复和审批没有产品闭环                     |
-| 网站产物                       | 暂不支持     | 代码生成、Sandbox 和真实 Preview 尚未接入              |
+| Project Sandbox 生命周期       | 已实现       | API 创建/删除 Project 时创建/释放本地 Docker Sandbox   |
+| 网站产物                       | 暂不支持     | 代码生成、文件 Tool 和真实 Preview 尚未接入            |
 
 ## Task Routing
 
